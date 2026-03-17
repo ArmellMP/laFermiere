@@ -7,9 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ✅ AutoMapper versions CORRECTES et compatibles -->
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    
+    <!-- ✅ API Versioning -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
+    
+    <!-- ✅ OpenAPI -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    
+    <!-- ✅ Swashbuckle (pour Swagger UI) -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+    
+    <!-- ✅ HealthChecks avec version 9.0.0 (8.1.0 n'existe pas) -->
+    <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
