@@ -3,9 +3,6 @@ using MediatR;
 
 namespace Application.Features.Bandes.Queries.GetBandeById
 {
-    /// <summary>
-    /// Query pour récupérer une bande par son ID.
-    /// </summary>
     public record GetBandeByIdQuery : IRequest<BandeResponseDto?>
     {
         /// <summary>
@@ -14,8 +11,7 @@ namespace Application.Features.Bandes.Queries.GetBandeById
         public int Id { get; init; }
         
         /// <summary>
-        /// Inclure les détails supplémentaires.
-        /// Par défaut : false.
+        /// Inclure les détails supplémentaires. Par défaut : false.
         /// </summary>
         public bool IncludeDetails { get; init; } = false;
     }

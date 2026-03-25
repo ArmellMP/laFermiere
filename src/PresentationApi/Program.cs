@@ -46,7 +46,7 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     
-    // Vérification IBandeRepository (existant)
+    // Vérification IBandeRepository
     try
     {
         var repo = services.GetRequiredService<Application.Features.Bandes.Interfaces.IBandeRepository>();
@@ -57,7 +57,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IBandeRepository: {ex.Message}");
     }
     
-    // ✅ NOUVEAU : Vérification IStockRepository
+    // Vérification IStockRepository
     try
     {
         var stockRepo = services.GetRequiredService<Application.Features.Stocks.Interfaces.IStockRepository>();
@@ -66,6 +66,28 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"❌ ERREUR IStockRepository: {ex.Message}");
+    }
+    
+    // Vérification ISuiviJournalierRepository
+    try
+    {
+        var suiviRepo = services.GetRequiredService<Application.Features.SuivisJournaliers.Interfaces.ISuiviJournalierRepository>();
+        Console.WriteLine("✅ ISuiviJournalierRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR ISuiviJournalierRepository: {ex.Message}");
+    }
+    
+    // ✅ NOUVEAU : Vérification IClientRepository
+    try
+    {
+        var clientRepo = services.GetRequiredService<Application.Features.Clients.Interfaces.IClientRepository>();
+        Console.WriteLine("✅ IClientRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IClientRepository: {ex.Message}");
     }
     
     // Vérification DapperContext

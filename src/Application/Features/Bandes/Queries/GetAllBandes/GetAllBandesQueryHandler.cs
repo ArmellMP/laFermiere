@@ -32,8 +32,7 @@ namespace Application.Features.Bandes.Queries.GetAllBandes
             // Convertir en DTOs
             var bandeDtos = _mapper.Map<List<BandeResponseDto>>(bandes);
             
-            // Inclure les détails si demandé
-            // request.IncludeDetails vient du record
+            // Inclure les détails si demandé, request.IncludeDetails vient du record
             if (request.IncludeDetails)
             {
                 foreach (var dto in bandeDtos)

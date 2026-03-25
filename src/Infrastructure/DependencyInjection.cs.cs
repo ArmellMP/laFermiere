@@ -1,11 +1,12 @@
-// Infrastructure/DependencyInjection.cs
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Infrastructure.DbContext.DapperContext;
 using Infrastructure.Repositories;
-using Infrastructure.Repositories.BandeRepository; // existant
+using Infrastructure.Repositories.BandeRepository; 
 using Application.Features.Bandes.Interfaces;
-using Application.Features.Stocks.Interfaces; // AJOUT
+using Application.Features.Stocks.Interfaces; 
+using Application.Features.SuivisJournaliers.Interfaces;
+using Application.Features.Clients.Interfaces;
 
 namespace Infrastructure
 {
@@ -21,12 +22,12 @@ namespace Infrastructure
             // Repository Bande (déjà existant)
             services.AddScoped<IBandeRepository, BandeRepository>();
             services.AddScoped<IStockRepository, StockRepository>();
+            services.AddScoped<ISuiviJournalierRepository, SuiviJournalierRepository>();
+            services.AddScoped<IClientRepository, ClientRepository>();
             
             // Autres repositories (à décommenter plus tard)
-            // services.AddScoped<ISuiviJournalierRepository, SuiviJournalierRepository>();
             // services.AddScoped<IVenteRepository, VenteRepository>();
             // services.AddScoped<IAchatRepository, AchatRepository>();
-            // services.AddScoped<IClientRepository, ClientRepository>();
             // services.AddScoped<IFournisseurRepository, FournisseurRepository>();
             
             return services;

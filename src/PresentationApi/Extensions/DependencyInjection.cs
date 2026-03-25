@@ -1,4 +1,3 @@
-// PresentationAPI/Extensions/DependencyInjection.cs
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Application;      // Pour AddApplication()
