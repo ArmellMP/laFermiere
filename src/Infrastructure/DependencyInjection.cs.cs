@@ -7,6 +7,8 @@ using Application.Features.Bandes.Interfaces;
 using Application.Features.Stocks.Interfaces; 
 using Application.Features.SuivisJournaliers.Interfaces;
 using Application.Features.Clients.Interfaces;
+using Application.Features.Fournisseurs.Interfaces;
+using Application.Features.Ventes.Interfaces;
 
 namespace Infrastructure
 {
@@ -24,11 +26,11 @@ namespace Infrastructure
             services.AddScoped<IStockRepository, StockRepository>();
             services.AddScoped<ISuiviJournalierRepository, SuiviJournalierRepository>();
             services.AddScoped<IClientRepository, ClientRepository>();
+            services.AddScoped<IFournisseurRepository, FournisseurRepository>();
+            services.AddScoped<IVenteRepository, VenteRepository>();
             
             // Autres repositories (à décommenter plus tard)
-            // services.AddScoped<IVenteRepository, VenteRepository>();
             // services.AddScoped<IAchatRepository, AchatRepository>();
-            // services.AddScoped<IFournisseurRepository, FournisseurRepository>();
             
             return services;
         }

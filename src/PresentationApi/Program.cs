@@ -10,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. CONFIGURATION DES SERVICES
 // ============================================
 
-// 1.1 Contrôleurs avec configuration JSON
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -18,11 +17,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-// 1.2 Documentation API (Swagger)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 1.3 CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -33,20 +30,16 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 1.4 Health Checks
 builder.Services.AddHealthChecks();
-
-// 1.5 NOS SERVICES MÉTIER
 builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
 
-// ✅ DIAGNOSTIC : Vérifier les services enregistrés
+// ✅ DIAGNOSTIC
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     
-    // Vérification IBandeRepository
     try
     {
         var repo = services.GetRequiredService<Application.Features.Bandes.Interfaces.IBandeRepository>();
@@ -57,7 +50,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IBandeRepository: {ex.Message}");
     }
     
-    // Vérification IStockRepository
     try
     {
         var stockRepo = services.GetRequiredService<Application.Features.Stocks.Interfaces.IStockRepository>();
@@ -68,7 +60,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IStockRepository: {ex.Message}");
     }
     
-    // Vérification ISuiviJournalierRepository
     try
     {
         var suiviRepo = services.GetRequiredService<Application.Features.SuivisJournaliers.Interfaces.ISuiviJournalierRepository>();
@@ -79,7 +70,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR ISuiviJournalierRepository: {ex.Message}");
     }
     
-    // ✅ NOUVEAU : Vérification IClientRepository
     try
     {
         var clientRepo = services.GetRequiredService<Application.Features.Clients.Interfaces.IClientRepository>();
@@ -90,7 +80,27 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IClientRepository: {ex.Message}");
     }
     
-    // Vérification DapperContext
+    try
+    {
+        var fournisseurRepo = services.GetRequiredService<Application.Features.Fournisseurs.Interfaces.IFournisseurRepository>();
+        Console.WriteLine("✅ IFournisseurRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IFournisseurRepository: {ex.Message}");
+    }
+    
+    // ✅ NOUVEAU : Vérification Vente
+    try
+    {
+        var venteRepo = services.GetRequiredService<Application.Features.Ventes.Interfaces.IVenteRepository>();
+        Console.WriteLine("✅ IVenteRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IVenteRepository: {ex.Message}");
+    }
+    
     try
     {
         var context = services.GetRequiredService<Infrastructure.DbContext.DapperContext.DapperContext>();
@@ -103,7 +113,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ============================================
-// 2. CONFIGURATION DU PIPELINE HTTP
+// 2. PIPELINE HTTP
 // ============================================
 
 app.UseMiddleware<ExceptionMiddleware>();
