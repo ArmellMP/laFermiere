@@ -1,8 +1,8 @@
 using MediatR;
-using AutoMapper;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
 using Application.Features.Stocks.Queries.GetStocksPerimes;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Queries.GetAllStocks
 {
@@ -12,14 +12,11 @@ namespace Application.Features.Stocks.Queries.GetAllStocks
     public class GetAllStocksQueryHandler : IRequestHandler<GetAllStocksQuery, List<StockResponseDto>>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public GetAllStocksQueryHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<List<StockResponseDto>> Handle(
@@ -53,7 +50,7 @@ namespace Application.Features.Stocks.Queries.GetAllStocks
             }
             
             // 3. Mapper et retourner
-            return _mapper.Map<List<StockResponseDto>>(stocks);
+            return stocks.ToResponseDtos();
         }
     }
 }

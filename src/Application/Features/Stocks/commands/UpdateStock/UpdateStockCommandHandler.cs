@@ -1,8 +1,8 @@
 using MediatR;
-using AutoMapper;
 using Application.Common.Exceptions;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Commands.UpdateStock
 {
@@ -12,14 +12,11 @@ namespace Application.Features.Stocks.Commands.UpdateStock
     public class UpdateStockCommandHandler : IRequestHandler<UpdateStockCommand, StockResponseDto>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public UpdateStockCommandHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<StockResponseDto> Handle(
@@ -45,7 +42,7 @@ namespace Application.Features.Stocks.Commands.UpdateStock
             await _stockRepository.UpdateAsync(existingStock, cancellationToken);
             
             // 7. Retourner le DTO de réponse
-            return _mapper.Map<StockResponseDto>(existingStock);
+            return existingStock.ToResponseDto();
         }
         
         /// <summary>

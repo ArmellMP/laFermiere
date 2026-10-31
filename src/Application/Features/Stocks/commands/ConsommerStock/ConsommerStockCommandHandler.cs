@@ -1,8 +1,8 @@
 using MediatR;
-using AutoMapper;
 using Application.Common.Exceptions;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Commands.ConsommerStock
 {
@@ -12,14 +12,11 @@ namespace Application.Features.Stocks.Commands.ConsommerStock
     public class ConsommerStockCommandHandler : IRequestHandler<ConsommerStockCommand, StockResponseDto>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public ConsommerStockCommandHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<StockResponseDto> Handle(
@@ -40,7 +37,7 @@ namespace Application.Features.Stocks.Commands.ConsommerStock
             await _stockRepository.UpdateAsync(stock, cancellationToken);
             
             // 5. Retourner le stock mis à jour
-            return _mapper.Map<StockResponseDto>(stock);
+            return stock.ToResponseDto();
         }
         
         private async Task<Domain.Entities.Stock> GetStockAsync(

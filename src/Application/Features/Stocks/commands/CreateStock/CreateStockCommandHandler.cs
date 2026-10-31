@@ -1,11 +1,11 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
 using Application.Common.Exceptions; 
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Commands.CreateStock
 {
@@ -16,16 +16,13 @@ namespace Application.Features.Stocks.Commands.CreateStock
     public class CreateStockCommandHandler : IRequestHandler<CreateStockCommand, StockResponseDto>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateStockCommandHandler> _logger;
 
         public CreateStockCommandHandler(
             IStockRepository stockRepository,
-            IMapper mapper,
             ILogger<CreateStockCommandHandler> logger)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -38,8 +35,8 @@ namespace Application.Features.Stocks.Commands.CreateStock
             // 1. Validation des règles métier
             await ValidateBusinessRulesAsync(createDto, cancellationToken);
 
-            // 2. Conversion DTO -> Entity via AutoMapper
-            var stock = _mapper.Map<Stock>(createDto);
+            // 2. Conversion DTO -> Entity (mapping manuel, voir StockMappings)
+            var stock = createDto.ToEntity();
 
             // 3. Conversion sécurisée des enums
             if (!Enum.TryParse<TypeStock>(createDto.Type, true, out var typeStock))
@@ -68,7 +65,7 @@ namespace Application.Features.Stocks.Commands.CreateStock
             _logger.LogInformation("Stock créé avec succès : {Id}", createdStock.Id);
 
             // 7. Conversion Entity -> DTO
-            return _mapper.Map<StockResponseDto>(createdStock);
+            return createdStock.ToResponseDto();
         }
 
         /// <summary>

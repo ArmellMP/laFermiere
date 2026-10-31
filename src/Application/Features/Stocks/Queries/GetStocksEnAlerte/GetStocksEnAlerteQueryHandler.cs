@@ -1,7 +1,7 @@
 using MediatR;
-using AutoMapper;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Queries.GetStocksEnAlerte
 {
@@ -11,14 +11,11 @@ namespace Application.Features.Stocks.Queries.GetStocksEnAlerte
     public class GetStocksEnAlerteQueryHandler : IRequestHandler<GetStocksEnAlerteQuery, List<StockResponseDto>>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public GetStocksEnAlerteQueryHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<List<StockResponseDto>> Handle(
@@ -35,7 +32,7 @@ namespace Application.Features.Stocks.Queries.GetStocksEnAlerte
             }
             
             // 3. Mapper et retourner
-            return _mapper.Map<List<StockResponseDto>>(stocks);
+            return stocks.ToResponseDtos();
         }
     }
 }

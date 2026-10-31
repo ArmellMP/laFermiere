@@ -1,9 +1,8 @@
-﻿using PresentationApi.Security;
+﻿// PresentationApi/Controllers/StocksController.cs
+using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
-// PresentationApi/Controllers/StocksController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Stocks;
 using PresentationApi.Models.Responses;
 using Application.Features.Stocks.Queries.GetAllStocks;
@@ -15,6 +14,7 @@ using Application.Features.Stocks.Commands.CreateStock;
 using Application.Features.Stocks.Commands.UpdateStock;
 using Application.Features.Stocks.Commands.DeleteStock;
 using Application.Features.Stocks.Commands.ConsommerStock;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -26,16 +26,13 @@ namespace PresentationApi.Controllers
     public class StocksController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<StocksController> _logger;
 
         public StocksController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<StocksController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -61,7 +58,7 @@ namespace PresentationApi.Controllers
             };
             
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<StockResponse>>(result);
+            var response = result.ToResponses();
             
             return Ok(response);
         }
@@ -79,7 +76,7 @@ namespace PresentationApi.Controllers
             var query = new GetStockByIdQuery { Id = id };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<StockResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -95,7 +92,7 @@ namespace PresentationApi.Controllers
             var query = new GetStocksByBandeQuery { BandeId = bandeId };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<List<StockResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -111,7 +108,7 @@ namespace PresentationApi.Controllers
             var query = new GetStocksEnAlerteQuery { BandeId = bandeId };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<List<StockResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -127,7 +124,7 @@ namespace PresentationApi.Controllers
             var query = new GetStocksPerimesQuery { JoursAlerte = joursAlerte };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<List<StockResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -142,10 +139,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouveau stock: {Nom}", request.Nom);
             
-            var command = _mapper.Map<CreateStockCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<StockResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -166,10 +163,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour du stock {StockId}", id);
             
-            var command = _mapper.Map<UpdateStockCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<StockResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -190,10 +187,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Consommation du stock {StockId}: {Quantite}", id, request.QuantiteConsommee);
             
-            var command = _mapper.Map<ConsommerStockCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<StockResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
