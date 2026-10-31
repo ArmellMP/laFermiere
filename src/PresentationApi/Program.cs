@@ -23,7 +23,30 @@ builder.Services.AddControllers()
 
 // Documentation OpenAPI : générateur intégré à .NET 10 (remplace AddSwaggerGen,
 // qui n'était plus compatible). Le document est servi sur /openapi/v1.json.
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    // Déclare l'authentification "Bearer JWT" dans le document OpenAPI :
+    // Swagger affiche alors un bouton "Authorize" pour saisir le jeton.
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new Microsoft.OpenApi.OpenApiComponents();
+        document.Components.SecuritySchemes ??=
+            new Dictionary<string, Microsoft.OpenApi.IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new Microsoft.OpenApi.OpenApiSecurityScheme
+        {
+            Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Colle ici le jeton reçu de /api/v1/Utilisateurs/authenticate"
+        };
+        document.Security ??= [];
+        document.Security.Add(new Microsoft.OpenApi.OpenApiSecurityRequirement
+        {
+            [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document)] = []
+        });
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -220,7 +243,9 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// Tous les contrôleurs exigent un utilisateur authentifié (jeton JWT valide).
+// Exception : les actions marquées [AllowAnonymous], comme /authenticate.
+app.MapControllers().RequireAuthorization();
 app.MapHealthChecks("/health");
 
 app.MapGet("/", () => Results.Json(new
