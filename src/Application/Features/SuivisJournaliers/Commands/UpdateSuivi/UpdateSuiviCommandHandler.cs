@@ -122,7 +122,11 @@ namespace Application.Features.SuivisJournaliers.Commands.UpdateSuivi
             // ============================================
             // 8. Retourner la réponse
             // ============================================
-            return existingSuivi.ToResponseDto();
+            var suiviDto = existingSuivi.ToResponseDto();
+            // AgeEnJours (calculé par le DTO) = DateSuivi - DateArriveeBande.
+            // Sans cette ligne, DateArriveeBande vaut 01/01/0001 et l'âge affiché est absurde.
+            suiviDto.DateArriveeBande = bande.DateArrivee;
+            return suiviDto;
         }
 
         /// <summary>
