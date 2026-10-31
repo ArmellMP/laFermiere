@@ -11,17 +11,16 @@ namespace PresentationApi.Extensions
             this IServiceCollection services, 
             IConfiguration configuration)
         {
-            // ✅ 1. Services de la couche Application (MediatR, AutoMapper)
+            // ✅ 1. Services de la couche Application (MediatR, FluentValidation)
             services.AddApplication();
-            
+
             // ✅ 2. Services de la couche Infrastructure (Repositories)
             services.AddInfrastructure(configuration);
-            
-            // ✅ 3. AutoMapper pour les Profiles de PresentationApi
-            // Version simplifiée - évite l'ambiguïté
-            services.AddAutoMapper(typeof(Program));
-            
-            // ✅ 4. Services spécifiques à l'API
+
+            // (Le mapping Requests/Responses <-> Commands/DTOs se fait par des méthodes
+            //  d'extension statiques dans PresentationApi/Mappings : rien à enregistrer.)
+
+            // ✅ 3. Services spécifiques à l'API
             services.AddHttpClient();
             services.AddMemoryCache();
             services.AddHealthChecks();

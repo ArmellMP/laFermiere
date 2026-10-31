@@ -1,5 +1,4 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.SuivisJournaliers.Interfaces;
@@ -8,6 +7,7 @@ using Application.Features.SuivisJournaliers.Dtos;
 using Application.Features.Bandes.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
 {
@@ -19,20 +19,17 @@ namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
         private readonly ISuiviJournalierRepository _suiviRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateSuiviCommandHandler> _logger;
 
         public CreateSuiviCommandHandler(
             ISuiviJournalierRepository suiviRepository,
             IBandeRepository bandeRepository,
             IStockRepository stockRepository,
-            IMapper mapper,
             ILogger<CreateSuiviCommandHandler> logger)
         {
             _suiviRepository = suiviRepository;
             _bandeRepository = bandeRepository;
             _stockRepository = stockRepository;
-            _mapper = mapper;
             _logger = logger;
         }      
 
@@ -143,7 +140,7 @@ namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
             // ============================================
             // 8. Retour de la réponse
             // ============================================
-            return _mapper.Map<SuiviResponseDto>(createdSuivi);
+            return createdSuivi.ToResponseDto();
         }
 
         /// <summary>

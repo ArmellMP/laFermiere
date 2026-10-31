@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Alertes.Interfaces;
 using Application.Features.Alertes.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Alertes.Queries.GetAllAlertes
 {
     public class GetAllAlertesQueryHandler : IRequestHandler<GetAllAlertesQuery, List<AlerteResponseDto>>
     {
         private readonly IAlerteRepository _alerteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllAlertesQueryHandler> _logger;
 
         public GetAllAlertesQueryHandler(
             IAlerteRepository alerteRepository,
-            IMapper mapper,
             ILogger<GetAllAlertesQueryHandler> logger)
         {
             _alerteRepository = alerteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -66,7 +63,7 @@ namespace Application.Features.Alertes.Queries.GetAllAlertes
                 alertes = alertes.Where(a => a.Niveau.ToString() == request.Niveau);
             }
 
-            return _mapper.Map<List<AlerteResponseDto>>(alertes);
+            return alertes.ToResponseDtos();
         }
     }
 }

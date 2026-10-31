@@ -2,7 +2,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using AutoMapper;
 using PresentationApi.Models.Requests.Utilisateurs;
 using PresentationApi.Models.Responses;
 using Application.Features.Utilisateurs.Queries.GetAllUtilisateurs;
@@ -11,6 +10,7 @@ using Application.Features.Utilisateurs.Queries.AuthenticateUser;
 using Application.Features.Utilisateurs.Commands.CreateUtilisateur;
 using Application.Features.Utilisateurs.Commands.UpdateUtilisateur;
 using Application.Features.Utilisateurs.Commands.DeleteUtilisateur;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -20,16 +20,13 @@ namespace PresentationApi.Controllers
     public class UtilisateursController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<UtilisateursController> _logger;
 
         public UtilisateursController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<UtilisateursController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -54,7 +51,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<UtilisateurResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -67,7 +64,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetUtilisateurByIdQuery { Id = id };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<UtilisateurResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -93,7 +90,7 @@ namespace PresentationApi.Controllers
                 {
                     Success = true,
                     Message = "Authentification réussie",
-                    Utilisateur = _mapper.Map<UtilisateurResponse>(result.Utilisateur),
+                    Utilisateur = result.Utilisateur.ToResponse(),
                     Token = result.Token,
                     Expiration = result.Expiration
                 };
@@ -121,10 +118,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouvel utilisateur: {Email}", request.Email);
 
-            var command = _mapper.Map<CreateUtilisateurCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<UtilisateurResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -141,10 +138,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour de l'utilisateur {UtilisateurId}", id);
 
-            var command = _mapper.Map<UpdateUtilisateurCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<UtilisateurResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

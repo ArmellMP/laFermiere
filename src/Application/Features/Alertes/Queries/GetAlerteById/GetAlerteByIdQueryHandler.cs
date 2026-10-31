@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Alertes.Interfaces;
 using Application.Features.Alertes.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Alertes.Queries.GetAlerteById
 {
     public class GetAlerteByIdQueryHandler : IRequestHandler<GetAlerteByIdQuery, AlerteResponseDto>
     {
         private readonly IAlerteRepository _alerteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAlerteByIdQueryHandler> _logger;
 
         public GetAlerteByIdQueryHandler(
             IAlerteRepository alerteRepository,
-            IMapper mapper,
             ILogger<GetAlerteByIdQueryHandler> logger)
         {
             _alerteRepository = alerteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -36,7 +33,7 @@ namespace Application.Features.Alertes.Queries.GetAlerteById
                 throw new NotFoundException($"Alerte avec l'ID {request.Id} non trouvée.");
             }
 
-            return _mapper.Map<AlerteResponseDto>(alerte);
+            return alerte.ToResponseDto();
         }
     }
 }

@@ -1,5 +1,4 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Common.Security;
@@ -7,22 +6,20 @@ using Application.Features.Utilisateurs.Interfaces;
 using Application.Features.Utilisateurs.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
 {
     public class UpdateUtilisateurCommandHandler : IRequestHandler<UpdateUtilisateurCommand, UtilisateurResponseDto>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateUtilisateurCommandHandler> _logger;
 
         public UpdateUtilisateurCommandHandler(
             IUtilisateurRepository utilisateurRepository,
-            IMapper mapper,
             ILogger<UpdateUtilisateurCommandHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -80,7 +77,7 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
             _logger.LogInformation("Utilisateur {UtilisateurId} mis à jour avec succès", updateDto.Id);
 
             // 5. Retour de la réponse
-            return _mapper.Map<UtilisateurResponseDto>(existingUtilisateur);
+            return existingUtilisateur.ToResponseDto();
         }
     }
 }

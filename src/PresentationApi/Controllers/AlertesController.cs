@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Alertes;
 using PresentationApi.Models.Responses;
 using Application.Features.Alertes.Queries.GetAllAlertes;
@@ -13,6 +12,7 @@ using Application.Features.Alertes.Commands.CreateAlerte;
 using Application.Features.Alertes.Commands.UpdateAlerte;
 using Application.Features.Alertes.Commands.DeleteAlerte;
 using Application.Features.Alertes.Commands.MarquerAlertes;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -21,16 +21,13 @@ namespace PresentationApi.Controllers
     public class AlertesController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<AlertesController> _logger;
 
         public AlertesController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<AlertesController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -61,7 +58,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<AlerteResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -80,7 +77,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<AlerteResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -93,7 +90,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetAlerteByIdQuery { Id = id };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<AlerteResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -127,10 +124,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'une nouvelle alerte");
 
-            var command = _mapper.Map<CreateAlerteCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<AlerteResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -148,10 +145,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour de l'alerte {AlerteId}", id);
 
-            var command = _mapper.Map<UpdateAlerteCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<AlerteResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

@@ -1,10 +1,10 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.SuivisJournaliers.Interfaces;
 using Application.Features.SuivisJournaliers.Dtos;
 using Application.Features.Bandes.Interfaces;
+using Application.Common.Mappings;
 
 namespace Application.Features.SuivisJournaliers.Queries.GetAllSuivisByBandeId
 {
@@ -16,18 +16,15 @@ namespace Application.Features.SuivisJournaliers.Queries.GetAllSuivisByBandeId
     {
         private readonly ISuiviJournalierRepository _suiviRepository;
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllSuivisByBandeIdQueryHandler> _logger;
 
         public GetAllSuivisByBandeIdQueryHandler(
             ISuiviJournalierRepository suiviRepository,
             IBandeRepository bandeRepository,
-            IMapper mapper,
             ILogger<GetAllSuivisByBandeIdQueryHandler> logger)
         {
             _suiviRepository = suiviRepository;
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -94,7 +91,7 @@ namespace Application.Features.SuivisJournaliers.Queries.GetAllSuivisByBandeId
             // ============================================
             // 5. Mapper et retourner
             // ============================================
-            var suivisDto = _mapper.Map<List<SuiviResponseDto>>(suivis);
+            var suivisDto = suivis.ToResponseDtos();
 
             // Ajouter des informations supplémentaires si nécessaire
             foreach (var dto in suivisDto)

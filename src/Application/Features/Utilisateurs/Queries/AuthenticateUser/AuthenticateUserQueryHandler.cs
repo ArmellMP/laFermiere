@@ -3,12 +3,12 @@
 // ============================================
 
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Common.Security;
 using Application.Features.Utilisateurs.Interfaces;
 using Application.Features.Utilisateurs.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
 {
@@ -18,18 +18,15 @@ namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
     public class AuthenticateUserQueryHandler : IRequestHandler<AuthenticateUserQuery, AuthenticateUserResponse>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
-        private readonly IMapper _mapper;
         private readonly IJwtService _jwtService;
         private readonly ILogger<AuthenticateUserQueryHandler> _logger;
 
         public AuthenticateUserQueryHandler(
             IUtilisateurRepository utilisateurRepository,
-            IMapper mapper,
             IJwtService jwtService,
             ILogger<AuthenticateUserQueryHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
-            _mapper = mapper;
             _jwtService = jwtService;
             _logger = logger;
         }
@@ -73,7 +70,7 @@ namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
             // 4. Retourner la réponse
             return new AuthenticateUserResponse
             {
-                Utilisateur = _mapper.Map<UtilisateurResponseDto>(utilisateur),
+                Utilisateur = utilisateur.ToResponseDto(),
                 Token = token,
                 Expiration = DateTime.UtcNow.AddMinutes(60) // À configurer
             };

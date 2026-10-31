@@ -1,6 +1,5 @@
 // Application/Features/Utilisateurs/Commands/CreateUtilisateur/CreateUtilisateurCommandHandler.cs
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Common.Security;
@@ -8,22 +7,20 @@ using Application.Features.Utilisateurs.Interfaces;
 using Application.Features.Utilisateurs.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Utilisateurs.Commands.CreateUtilisateur
 {
     public class CreateUtilisateurCommandHandler : IRequestHandler<CreateUtilisateurCommand, UtilisateurResponseDto>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateUtilisateurCommandHandler> _logger;
 
         public CreateUtilisateurCommandHandler(
             IUtilisateurRepository utilisateurRepository,
-            IMapper mapper,
             ILogger<CreateUtilisateurCommandHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -83,7 +80,7 @@ namespace Application.Features.Utilisateurs.Commands.CreateUtilisateur
             // ============================================
             // 6. Retour de la réponse
             // ============================================
-            return _mapper.Map<UtilisateurResponseDto>(createdUtilisateur);
+            return createdUtilisateur.ToResponseDto();
         }
     }
 }

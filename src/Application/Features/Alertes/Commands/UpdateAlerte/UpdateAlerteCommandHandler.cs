@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Alertes.Interfaces;
 using Application.Features.Alertes.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Alertes.Commands.UpdateAlerte
 {
     public class UpdateAlerteCommandHandler : IRequestHandler<UpdateAlerteCommand, AlerteResponseDto>
     {
         private readonly IAlerteRepository _alerteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateAlerteCommandHandler> _logger;
 
         public UpdateAlerteCommandHandler(
             IAlerteRepository alerteRepository,
-            IMapper mapper,
             ILogger<UpdateAlerteCommandHandler> logger)
         {
             _alerteRepository = alerteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -56,7 +53,7 @@ namespace Application.Features.Alertes.Commands.UpdateAlerte
             _logger.LogInformation("Alerte {AlerteId} mise à jour avec succès", updateDto.Id);
 
             // 4. Retour de la réponse
-            return _mapper.Map<AlerteResponseDto>(existingAlerte);
+            return existingAlerte.ToResponseDto();
         }
     }
 }

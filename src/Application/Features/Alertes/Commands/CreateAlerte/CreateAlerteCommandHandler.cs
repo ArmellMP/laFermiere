@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Alertes.Interfaces;
 using Application.Features.Alertes.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Alertes.Commands.CreateAlerte
 {
     public class CreateAlerteCommandHandler : IRequestHandler<CreateAlerteCommand, AlerteResponseDto>
     {
         private readonly IAlerteRepository _alerteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateAlerteCommandHandler> _logger;
 
         public CreateAlerteCommandHandler(
             IAlerteRepository alerteRepository,
-            IMapper mapper,
             ILogger<CreateAlerteCommandHandler> logger)
         {
             _alerteRepository = alerteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -69,7 +66,7 @@ namespace Application.Features.Alertes.Commands.CreateAlerte
             // ============================================
             // 4. Retour de la réponse
             // ============================================
-            return _mapper.Map<AlerteResponseDto>(createdAlerte);
+            return createdAlerte.ToResponseDto();
         }
     }
 }

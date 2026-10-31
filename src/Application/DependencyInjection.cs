@@ -8,8 +8,10 @@ namespace Application
     /// Configuration des services pour la couche Application.
     /// Responsable de l'enregistrement de tous les services liés à :
     /// - MediatR (CQRS : Commands/Queries/Handlers)
-    /// - AutoMapper (Mapping entre DTOs et Entities)
     /// - FluentValidation (Validation des DTOs)
+    ///
+    /// Le mapping Entité -> DTO n'a pas besoin d'être enregistré ici : ce sont des
+    /// méthodes d'extension statiques (Common/Mappings/XxxMappings.cs), appelées directement.
     /// </summary>
     public static class DependencyInjection
     {
@@ -40,17 +42,7 @@ namespace Application
                 cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
             
             // ============================================
-            // 2. AUTOMAPPER - MAPPING DTO ↔ ENTITY
-            // ============================================
-            
-            // AutoMapper scanne TOUS les Profiles dans l'assembly Application
-            // Il trouve automatiquement :
-            // - BandeProfile (mapping Bande ↔ BandeDto)
-            // - etc.
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
-            
-            // ============================================
-            // 3. FLUENTVALIDATION - VALIDATION DES DTOS
+            // 2. FLUENTVALIDATION - VALIDATION DES DTOS
             // ============================================
             
             // Active la validation automatique des DTOs
@@ -58,21 +50,21 @@ namespace Application
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             
             // ============================================
-            // 4. PIPELINE BEHAVIORS - COMPORTEMENTS GLOBAUX
+            // 3. PIPELINE BEHAVIORS - COMPORTEMENTS GLOBAUX
             // ============================================
             
             // Ces behaviors s'exécutent AUTOMATIQUEMENT pour TOUTES les Commands/Queries
             
-            // 4.1 Validation Pipeline - Valide automatiquement avant le Handler
+            // 3.1 Validation Pipeline - Valide automatiquement avant le Handler
             // À DÉCOMMENTER QUAND VOUS AUREZ BESOIN DE VALIDATION AUTOMATIQUE
             // services.AddTransient(typeof(IPipelineBehavior<,>), 
             //     typeof(ValidationBehavior<,>));
             
-            // 4.2 Logging Pipeline - Logge automatiquement les requêtes
+            // 3.2 Logging Pipeline - Logge automatiquement les requêtes
             // services.AddTransient(typeof(IPipelineBehavior<,>), 
             //     typeof(LoggingBehavior<,>));
             
-            // 4.3 Performance Pipeline - Mesure le temps d'exécution
+            // 3.3 Performance Pipeline - Mesure le temps d'exécution
             // services.AddTransient(typeof(IPipelineBehavior<,>), 
             //     typeof(PerformanceBehavior<,>));
             

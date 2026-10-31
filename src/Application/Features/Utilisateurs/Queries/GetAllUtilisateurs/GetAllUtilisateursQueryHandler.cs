@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Utilisateurs.Interfaces;
 using Application.Features.Utilisateurs.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Utilisateurs.Queries.GetAllUtilisateurs
 {
     public class GetAllUtilisateursQueryHandler : IRequestHandler<GetAllUtilisateursQuery, List<UtilisateurResponseDto>>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllUtilisateursQueryHandler> _logger;
 
         public GetAllUtilisateursQueryHandler(
             IUtilisateurRepository utilisateurRepository,
-            IMapper mapper,
             ILogger<GetAllUtilisateursQueryHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -57,7 +54,7 @@ namespace Application.Features.Utilisateurs.Queries.GetAllUtilisateurs
                 utilisateurs = await _utilisateurRepository.GetAllAsync(cancellationToken);
             }
 
-            return _mapper.Map<List<UtilisateurResponseDto>>(utilisateurs);
+            return utilisateurs.ToResponseDtos();
         }
     }
 }
