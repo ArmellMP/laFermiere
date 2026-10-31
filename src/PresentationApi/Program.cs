@@ -21,9 +21,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-// ❌ SUPPRIMER SWAGGER (incompatible avec .NET 10)
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
+// Documentation OpenAPI : générateur intégré à .NET 10 (remplace AddSwaggerGen,
+// qui n'était plus compatible). Le document est servi sur /openapi/v1.json.
+builder.Services.AddOpenApi();
 
 builder.Services.AddCors(options =>
 {
@@ -204,12 +204,16 @@ using (var scope = app.Services.CreateScope())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-// ❌ Supprimer Swagger UI
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
+// Swagger : uniquement en développement (pas exposé en production)
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();   // publie /openapi/v1.json
+    app.UseSwaggerUI(options =>
+    {
+        // L'interface /swagger lit le document généré par MapOpenApi
+        options.SwaggerEndpoint("/openapi/v1.json", "La Fermière API v1");
+    });
+}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");

@@ -18,8 +18,10 @@
     <!-- OpenAPI -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     
-    <!-- Swashbuckle -->
-    
+    <!-- Swagger UI : uniquement l'interface web. Le document OpenAPI est généré
+         par Microsoft.AspNetCore.OpenApi (ci-dessus), compatible .NET 10. -->
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
+
     <!-- HealthChecks -->
     <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="9.0.0" />
     
