@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 // PresentationApi/Controllers/AchatsController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +17,7 @@ using Application.Features.Achats.Commands.DeleteAchat;
 
 namespace PresentationApi.Controllers
 {
+    [Authorize(Roles = AppRoles.AdminComptableFermier)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class AchatsController : ControllerBase
@@ -127,6 +130,7 @@ namespace PresentationApi.Controllers
         // COMMANDS
         // ============================================
 
+        [Authorize(Roles = AppRoles.AdminComptable)]
         [HttpPost]
         [ProducesResponseType(typeof(AchatResponse), 201)]
         [ProducesResponseType(400)]
@@ -141,6 +145,7 @@ namespace PresentationApi.Controllers
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
+        [Authorize(Roles = AppRoles.AdminComptable)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(AchatResponse), 200)]
         [ProducesResponseType(400)]
@@ -161,6 +166,7 @@ namespace PresentationApi.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = AppRoles.AdminComptable)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]

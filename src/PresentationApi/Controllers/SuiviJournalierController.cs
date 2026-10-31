@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -129,6 +131,7 @@ namespace PresentationApi.Controllers
         /// </summary>
         /// <param name="request">Données du suivi</param>
         /// <returns>Le suivi créé</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpPost]
         [ProducesResponseType(typeof(SuiviResponse), 201)]
         [ProducesResponseType(400)]
@@ -151,6 +154,7 @@ namespace PresentationApi.Controllers
         /// <param name="id">ID du suivi</param>
         /// <param name="request">Données de mise à jour</param>
         /// <returns>Le suivi mis à jour</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(SuiviResponse), 200)]
         [ProducesResponseType(400)]
@@ -176,6 +180,7 @@ namespace PresentationApi.Controllers
         /// </summary>
         /// <param name="id">ID du suivi</param>
         /// <returns>Confirmation de suppression</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

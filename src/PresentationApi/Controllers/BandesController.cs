@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 // PresentationAPI/Controllers/BandesController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -104,6 +106,7 @@ namespace PresentationAPI.Controllers
         /// </summary>
         /// <param name="request">Données de création</param>
         /// <returns>La bande créée</returns>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPost]
         [ProducesResponseType(typeof(BandeResponse), 201)]
         [ProducesResponseType(400)]
@@ -124,6 +127,7 @@ namespace PresentationAPI.Controllers
         /// <param name="id">ID de la bande</param>
         /// <param name="request">Données de mise à jour</param>
         /// <returns>La bande mise à jour</returns>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(BandeResponse), 200)]
         [ProducesResponseType(400)]
@@ -150,6 +154,7 @@ namespace PresentationAPI.Controllers
         /// <param name="id">ID de la bande</param>
         /// <param name="request">Données de clôture</param>
         /// <returns>La bande clôturée</returns>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPost("{id}/cloturer")]
         [ProducesResponseType(typeof(BandeResponse), 200)]
         [ProducesResponseType(400)]
@@ -175,6 +180,7 @@ namespace PresentationAPI.Controllers
         /// </summary>
         /// <param name="id">ID de la bande</param>
         /// <returns>Confirmation de suppression</returns>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -16,6 +18,7 @@ namespace PresentationApi.Controllers
     /// <summary>
     /// Contrôleur pour la gestion des clients.
     /// </summary>
+    [Authorize(Roles = AppRoles.AdminComptable)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class ClientsController : ControllerBase

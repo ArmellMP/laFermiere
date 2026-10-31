@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -14,6 +16,7 @@ using Application.Features.Ventes.Commands.DeleteVente;
 
 namespace PresentationApi.Controllers
 {
+    [Authorize(Roles = AppRoles.AdminComptable)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class VentesController : ControllerBase

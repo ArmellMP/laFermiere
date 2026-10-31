@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -12,6 +14,7 @@ using Application.Features.Parametres.Commands.DeleteParametre;
 
 namespace PresentationApi.Controllers
 {
+    [Authorize(Roles = AppRoles.Admin)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class ParametresController : ControllerBase

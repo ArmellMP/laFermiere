@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
@@ -117,6 +119,7 @@ namespace PresentationApi.Controllers
         // COMMANDS
         // ============================================
 
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPost]
         [ProducesResponseType(typeof(AlerteResponse), 201)]
         [ProducesResponseType(400)]
@@ -131,6 +134,7 @@ namespace PresentationApi.Controllers
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(AlerteResponse), 200)]
         [ProducesResponseType(400)]
@@ -169,6 +173,7 @@ namespace PresentationApi.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = AppRoles.Admin)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]

@@ -1,3 +1,5 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 // PresentationApi/Controllers/StocksController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -132,6 +134,7 @@ namespace PresentationApi.Controllers
         /// <summary>
         /// Crée un nouveau stock.
         /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPost]
         [ProducesResponseType(typeof(StockResponse), 201)]
         [ProducesResponseType(400)]
@@ -149,6 +152,7 @@ namespace PresentationApi.Controllers
         /// <summary>
         /// Met à jour un stock existant.
         /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(StockResponse), 200)]
         [ProducesResponseType(400)]
@@ -172,6 +176,7 @@ namespace PresentationApi.Controllers
         /// <summary>
         /// Consomme une quantité d'un stock.
         /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpPost("{id}/consommer")]
         [ProducesResponseType(typeof(StockResponse), 200)]
         [ProducesResponseType(400)]
@@ -195,6 +200,7 @@ namespace PresentationApi.Controllers
         /// <summary>
         /// Supprime un stock.
         /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

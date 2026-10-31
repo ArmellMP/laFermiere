@@ -1,3 +1,4 @@
+﻿using PresentationApi.Security;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,7 @@ using Application.Features.Utilisateurs.Commands.DeleteUtilisateur;
 
 namespace PresentationApi.Controllers
 {
+    [Authorize(Roles = AppRoles.Admin)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class UtilisateursController : ControllerBase
