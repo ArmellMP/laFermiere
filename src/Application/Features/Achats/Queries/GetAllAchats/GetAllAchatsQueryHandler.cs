@@ -1,24 +1,21 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Achats.Interfaces;
 using Application.Features.Achats.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Achats.Queries.GetAllAchats
 {
     public class GetAllAchatsQueryHandler : IRequestHandler<GetAllAchatsQuery, List<AchatResponseDto>>
     {
         private readonly IAchatRepository _achatRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllAchatsQueryHandler> _logger;
 
         public GetAllAchatsQueryHandler(
             IAchatRepository achatRepository,
-            IMapper mapper,
             ILogger<GetAllAchatsQueryHandler> logger)
         {
             _achatRepository = achatRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -65,7 +62,7 @@ namespace Application.Features.Achats.Queries.GetAllAchats
                 achats = achats.Where(a => a.TypeAchat.ToString() == request.TypeAchat);
             }
 
-            return _mapper.Map<List<AchatResponseDto>>(achats);
+            return achats.ToResponseDtos();
         }
     }
 }

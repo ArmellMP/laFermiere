@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Ventes.Interfaces;
 using Application.Features.Ventes.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Ventes.Commands.UpdateVente
 {
     public class UpdateVenteCommandHandler : IRequestHandler<UpdateVenteCommand, VenteResponseDto>
     {
         private readonly IVenteRepository _venteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateVenteCommandHandler> _logger;
 
         public UpdateVenteCommandHandler(
             IVenteRepository venteRepository,
-            IMapper mapper,
             ILogger<UpdateVenteCommandHandler> logger)
         {
             _venteRepository = venteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -90,7 +87,7 @@ namespace Application.Features.Ventes.Commands.UpdateVente
             _logger.LogInformation("Vente {VenteId} mise à jour avec succès", updateDto.Id);
 
             // 4. Retour de la réponse
-            return _mapper.Map<VenteResponseDto>(existingVente);
+            return existingVente.ToResponseDto();
         }
     }
 }

@@ -1,5 +1,4 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Achats.Interfaces;
@@ -8,6 +7,7 @@ using Application.Features.Bandes.Interfaces;
 using Application.Features.Fournisseurs.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Achats.Commands.CreateAchat
 {
@@ -16,20 +16,17 @@ namespace Application.Features.Achats.Commands.CreateAchat
         private readonly IAchatRepository _achatRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IFournisseurRepository _fournisseurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateAchatCommandHandler> _logger;
 
         public CreateAchatCommandHandler(
             IAchatRepository achatRepository,
             IBandeRepository bandeRepository,
             IFournisseurRepository fournisseurRepository,
-            IMapper mapper,
             ILogger<CreateAchatCommandHandler> logger)
         {
             _achatRepository = achatRepository;
             _bandeRepository = bandeRepository;
             _fournisseurRepository = fournisseurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -124,7 +121,7 @@ namespace Application.Features.Achats.Commands.CreateAchat
             // ============================================
             // 8. Retour de la réponse
             // ============================================
-            return _mapper.Map<AchatResponseDto>(createdAchat);
+            return createdAchat.ToResponseDto();
         }
     }
 }

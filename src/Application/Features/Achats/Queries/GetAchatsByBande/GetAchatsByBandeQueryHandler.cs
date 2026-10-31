@@ -1,24 +1,21 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Achats.Interfaces;
 using Application.Features.Achats.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Achats.Queries.GetAchatsByBande
 {
     public class GetAchatsByBandeQueryHandler : IRequestHandler<GetAchatsByBandeQuery, List<AchatResponseDto>>
     {
         private readonly IAchatRepository _achatRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAchatsByBandeQueryHandler> _logger;
 
         public GetAchatsByBandeQueryHandler(
             IAchatRepository achatRepository,
-            IMapper mapper,
             ILogger<GetAchatsByBandeQueryHandler> logger)
         {
             _achatRepository = achatRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -30,7 +27,7 @@ namespace Application.Features.Achats.Queries.GetAchatsByBande
 
             var achats = await _achatRepository.GetByBandeIdAsync(request.BandeId, cancellationToken);
             
-            return _mapper.Map<List<AchatResponseDto>>(achats);
+            return achats.ToResponseDtos();
         }
     }
 }

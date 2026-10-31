@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Achats.Interfaces;
 using Application.Features.Achats.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Achats.Queries.GetAchatById
 {
     public class GetAchatByIdQueryHandler : IRequestHandler<GetAchatByIdQuery, AchatResponseDto>
     {
         private readonly IAchatRepository _achatRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAchatByIdQueryHandler> _logger;
 
         public GetAchatByIdQueryHandler(
             IAchatRepository achatRepository,
-            IMapper mapper,
             ILogger<GetAchatByIdQueryHandler> logger)
         {
             _achatRepository = achatRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -36,7 +33,7 @@ namespace Application.Features.Achats.Queries.GetAchatById
                 throw new NotFoundException($"Achat avec l'ID {request.Id} non trouvé.");
             }
 
-            return _mapper.Map<AchatResponseDto>(achat);
+            return achat.ToResponseDto();
         }
     }
 }

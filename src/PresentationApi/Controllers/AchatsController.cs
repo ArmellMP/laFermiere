@@ -1,9 +1,8 @@
-﻿using PresentationApi.Security;
+﻿// PresentationApi/Controllers/AchatsController.cs
+using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
-// PresentationApi/Controllers/AchatsController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Achats;
 using PresentationApi.Models.Responses;
 using Application.Features.Achats.Queries.GetAllAchats;
@@ -14,6 +13,7 @@ using Application.Features.Achats.Queries.GetAchatsStats;
 using Application.Features.Achats.Commands.CreateAchat;
 using Application.Features.Achats.Commands.UpdateAchat;
 using Application.Features.Achats.Commands.DeleteAchat;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -23,16 +23,13 @@ namespace PresentationApi.Controllers
     public class AchatsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<AchatsController> _logger;
 
         public AchatsController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<AchatsController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -63,7 +60,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<AchatResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -76,7 +73,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetAchatByIdQuery { Id = id };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<AchatResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -88,7 +85,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetAchatsByBandeQuery { BandeId = bandeId };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<AchatResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -100,7 +97,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetAchatsByFournisseurQuery { FournisseurId = fournisseurId };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<AchatResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -138,10 +135,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouvel achat");
 
-            var command = _mapper.Map<CreateAchatCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<AchatResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -159,10 +156,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour de l'achat {AchatId}", id);
 
-            var command = _mapper.Map<UpdateAchatCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<AchatResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

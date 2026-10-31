@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Ventes.Interfaces;
 using Application.Features.Ventes.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Ventes.Queries.GetAllVentes
 {
     public class GetAllVentesQueryHandler : IRequestHandler<GetAllVentesQuery, List<VenteResponseDto>>
     {
         private readonly IVenteRepository _venteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllVentesQueryHandler> _logger;
 
         public GetAllVentesQueryHandler(
             IVenteRepository venteRepository,
-            IMapper mapper,
             ILogger<GetAllVentesQueryHandler> logger)
         {
             _venteRepository = venteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -66,7 +63,7 @@ namespace Application.Features.Ventes.Queries.GetAllVentes
                 ventes = ventes.Where(v => v.EstPaye == request.EstPaye.Value);
             }
 
-            return _mapper.Map<List<VenteResponseDto>>(ventes);
+            return ventes.ToResponseDtos();
         }
     }
 }

@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Achats.Interfaces;
 using Application.Features.Achats.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Achats.Commands.UpdateAchat
 {
     public class UpdateAchatCommandHandler : IRequestHandler<UpdateAchatCommand, AchatResponseDto>
     {
         private readonly IAchatRepository _achatRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateAchatCommandHandler> _logger;
 
         public UpdateAchatCommandHandler(
             IAchatRepository achatRepository,
-            IMapper mapper,
             ILogger<UpdateAchatCommandHandler> logger)
         {
             _achatRepository = achatRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -82,7 +79,7 @@ namespace Application.Features.Achats.Commands.UpdateAchat
             _logger.LogInformation("Achat {AchatId} mis à jour avec succès", updateDto.Id);
 
             // 4. Retour de la réponse
-            return _mapper.Map<AchatResponseDto>(existingAchat);
+            return existingAchat.ToResponseDto();
         }
     }
 }
