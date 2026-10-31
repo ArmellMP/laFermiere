@@ -1,14 +1,14 @@
-// PresentationAPI/Profiles/BandeProfile.cs
+// PresentationApi/Profiles/BandeProfile.cs
 using AutoMapper;
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Commands.CreateBande;
 using Application.Features.Bandes.Commands.UpdateBande;
 using Application.Features.Bandes.Commands.CloturerBande;
-using PresentationAPI.Models.Requests.Bandes;
-using PresentationAPI.Models.Responses;
+using PresentationApi.Models.Requests.Bandes;
+using PresentationApi.Models.Responses;
 using Domain.Enums;
 
-namespace PresentationAPI.Profiles
+namespace PresentationApi.Profiles
 {
     public class BandeProfile : Profile
     {

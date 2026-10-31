@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Application;
 using Infrastructure;
 
-namespace PresentationAPI.Extensions
+namespace PresentationApi.Extensions
 {
     public static class DependencyInjection
     {
@@ -17,7 +17,7 @@ namespace PresentationAPI.Extensions
             // ✅ 2. Services de la couche Infrastructure (Repositories)
             services.AddInfrastructure(configuration);
             
-            // ✅ 3. AutoMapper pour les Profiles de PresentationAPI
+            // ✅ 3. AutoMapper pour les Profiles de PresentationApi
             // Version simplifiée - évite l'ambiguïté
             services.AddAutoMapper(typeof(Program));
             

@@ -1,11 +1,11 @@
-// PresentationAPI/Middlewares/ExceptionMiddleware.cs
+// PresentationApi/Middlewares/ExceptionMiddleware.cs
 using System.Net;
 using System.Text.Json;
 using Application.Common.Exceptions;
 using FluentValidation;
 using MySqlConnector;
 
-namespace PresentationAPI.Middlewares
+namespace PresentationApi.Middlewares
 {
     public class ExceptionMiddleware
     {

@@ -15,7 +15,7 @@ namespace Application
     {
         /// <summary>
         /// Ajoute tous les services de la couche Application.
-        /// Cette méthode sera appelée depuis PresentationAPI.
+        /// Cette méthode sera appelée depuis PresentationApi.
         /// </summary>
         /// <param name="services">Collection des services</param>
         /// <returns>La collection des services pour chaînage</returns>

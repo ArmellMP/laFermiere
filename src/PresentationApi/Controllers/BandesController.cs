@@ -1,12 +1,12 @@
 ﻿using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
-// PresentationAPI/Controllers/BandesController.cs
+// PresentationApi/Controllers/BandesController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using Domain.Enums;
-using PresentationAPI.Models.Requests.Bandes;
-using PresentationAPI.Models.Responses;
+using PresentationApi.Models.Requests.Bandes;
+using PresentationApi.Models.Responses;
 using Application.Features.Bandes.Queries.GetAllBandes;
 using Application.Features.Bandes.Queries.GetBandeById;
 using Application.Features.Bandes.Queries.GetBandesByStatut;
@@ -16,7 +16,7 @@ using Application.Features.Bandes.Commands.UpdateBande;
 using Application.Features.Bandes.Commands.CloturerBande;
 using Application.Features.Bandes.Commands.DeleteBande;
 using Application.Features.Bandes.Dtos;                        
-namespace PresentationAPI.Controllers
+namespace PresentationApi.Controllers
 {
     /// <summary>
     /// Contrôleur pour la gestion des bandes d'élevage.

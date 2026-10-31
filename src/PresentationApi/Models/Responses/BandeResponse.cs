@@ -1,7 +1,7 @@
-// PresentationAPI/Models/Responses/BandeResponse.cs
+// PresentationApi/Models/Responses/BandeResponse.cs
 using System.Text.Json.Serialization;
 
-namespace PresentationAPI.Models.Responses
+namespace PresentationApi.Models.Responses
 {
     public class BandeResponse
     {

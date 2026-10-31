@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace PresentationAPI.Models.Requests.Bandes
+namespace PresentationApi.Models.Requests.Bandes
 {
     public class CloturerBandeRequest
     {
