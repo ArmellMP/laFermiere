@@ -3,6 +3,10 @@ using PresentationAPI.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Application.Common.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +21,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// ❌ SUPPRIMER SWAGGER (incompatible avec .NET 10)
+// builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(options =>
 {
@@ -33,9 +38,41 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddApplicationServices(builder.Configuration);
 
+// ============================================
+// CONFIGURATION JWT
+// ============================================
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var issuer = jwtSettings["Issuer"] ?? "LaFermiereAPI";
+var audience = jwtSettings["Audience"] ?? "LaFermiereClient";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddScoped<IJwtService, JwtService>();
+
 var app = builder.Build();
 
-// ✅ DIAGNOSTIC
+// ============================================
+// DIAGNOSTIC
+// ============================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -90,7 +127,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IFournisseurRepository: {ex.Message}");
     }
     
-    // ✅ NOUVEAU : Vérification Vente
     try
     {
         var venteRepo = services.GetRequiredService<Application.Features.Ventes.Interfaces.IVenteRepository>();
@@ -99,6 +135,56 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"❌ ERREUR IVenteRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var achatRepo = services.GetRequiredService<Application.Features.Achats.Interfaces.IAchatRepository>();
+        Console.WriteLine("✅ IAchatRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IAchatRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var utilisateurRepo = services.GetRequiredService<Application.Features.Utilisateurs.Interfaces.IUtilisateurRepository>();
+        Console.WriteLine("✅ IUtilisateurRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IUtilisateurRepository: {ex.Message}");
+    }
+
+    try
+    {
+        var parametreRepo = services.GetRequiredService<Application.Features.Parametres.Interfaces.IParametreRepository>();
+        Console.WriteLine("✅ IParametreRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IParametreRepository: {ex.Message}");
+    }
+
+    try
+    {
+        var alerteRepo = services.GetRequiredService<Application.Features.Alertes.Interfaces.IAlerteRepository>();
+        Console.WriteLine("✅ IAlerteRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IAlerteRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var jwtService = services.GetRequiredService<IJwtService>();
+        Console.WriteLine("✅ IJwtService est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IJwtService: {ex.Message}");
     }
     
     try
@@ -118,14 +204,16 @@ using (var scope = app.Services.CreateScope())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// ❌ Supprimer Swagger UI
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -135,7 +223,6 @@ app.MapGet("/", () => Results.Json(new
 {
     message = "Bienvenue sur l'API La Fermière",
     version = "1.0.0",
-    documentation = "/swagger",
     health = "/health"
 }));
 

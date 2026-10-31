@@ -7,7 +7,8 @@ class Program
     static async Task Main()
     {
         // Utilisez VOTRE chaîne de connexion
-        var connectionString = "Server=localhost;Port=3306;Database=lafermiere;User=root;Password=;CharSet=utf8mb4";
+        var connectionString = Environment.GetEnvironmentVariable("LAFERMIERE_DB_CONNECTION")
+            ?? throw new InvalidOperationException("Variable d'environnement LAFERMIERE_DB_CONNECTION non définie");
         
         try
         {

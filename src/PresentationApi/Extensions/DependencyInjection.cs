@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Application;      // Pour AddApplication()
-using Infrastructure;   // Pour AddInfrastructure()
-using System.Reflection; // Pour Assembly
+using Application;
+using Infrastructure;
 
 namespace PresentationAPI.Extensions
 {
@@ -19,7 +18,8 @@ namespace PresentationAPI.Extensions
             services.AddInfrastructure(configuration);
             
             // ✅ 3. AutoMapper pour les Profiles de PresentationAPI
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            // Version simplifiée - évite l'ambiguïté
+            services.AddAutoMapper(typeof(Program));
             
             // ✅ 4. Services spécifiques à l'API
             services.AddHttpClient();

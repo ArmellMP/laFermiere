@@ -1,8 +1,5 @@
-// Application/DependencyInjection.cs
-
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;// Pour Assembly.GetExecutingAssembly()
-
 using FluentValidation; // Pour la validation automatique
 
 namespace Application

@@ -1,32 +1,39 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>a7c2eeb4-01e1-4d44-8b63-a22a6f869f81</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- ✅ AutoMapper versions CORRECTES et compatibles -->
+    <!-- AutoMapper - Version compatible -->
     <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     
-    <!-- ✅ API Versioning -->
+    <!-- API Versioning -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
     
-    <!-- ✅ OpenAPI -->
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <!-- OpenAPI -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     
-    <!-- ✅ Swashbuckle (pour Swagger UI) -->
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+    <!-- Swashbuckle -->
     
-    <!-- ✅ HealthChecks avec version 9.0.0 (8.1.0 n'existe pas) -->
+    <!-- HealthChecks -->
     <PackageReference Include="AspNetCore.HealthChecks.MySql" Version="9.0.0" />
+    
+    <!-- Authentification JWT -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.0" />
   </ItemGroup>
 
+  <!-- RÉFÉRENCES VERS LES AUTRES PROJETS -->
   <ItemGroup>
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,10 @@ using Application.Features.SuivisJournaliers.Interfaces;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Ventes.Interfaces;
+using Application.Features.Achats.Interfaces;
+using Application.Features.Utilisateurs.Interfaces;
+using Application.Features.Parametres.Interfaces;
+using Application.Features.Alertes.Interfaces;
 
 namespace Infrastructure
 {
@@ -28,9 +32,10 @@ namespace Infrastructure
             services.AddScoped<IClientRepository, ClientRepository>();
             services.AddScoped<IFournisseurRepository, FournisseurRepository>();
             services.AddScoped<IVenteRepository, VenteRepository>();
-            
-            // Autres repositories (à décommenter plus tard)
-            // services.AddScoped<IAchatRepository, AchatRepository>();
+            services.AddScoped<IAchatRepository, AchatRepository>();
+            services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
+            services.AddScoped<IParametreRepository, ParametreRepository>();
+            services.AddScoped<IAlerteRepository, AlerteRepository>();
             
             return services;
         }
