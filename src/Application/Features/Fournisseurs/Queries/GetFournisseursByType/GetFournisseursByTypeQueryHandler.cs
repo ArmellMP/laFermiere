@@ -1,26 +1,23 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Fournisseurs.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Fournisseurs.Queries.GetFournisseursByType
 {
     public class GetFournisseursByTypeQueryHandler : IRequestHandler<GetFournisseursByTypeQuery, List<FournisseurResponseDto>>
     {
         private readonly IFournisseurRepository _fournisseurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetFournisseursByTypeQueryHandler> _logger;
 
         public GetFournisseursByTypeQueryHandler(
             IFournisseurRepository fournisseurRepository,
-            IMapper mapper,
             ILogger<GetFournisseursByTypeQueryHandler> logger)
         {
             _fournisseurRepository = fournisseurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -44,7 +41,7 @@ namespace Application.Features.Fournisseurs.Queries.GetFournisseursByType
                 fournisseurs = fournisseurs.Where(f => f.EstActif);
             }
 
-            return _mapper.Map<List<FournisseurResponseDto>>(fournisseurs);
+            return fournisseurs.ToResponseDtos();
         }
     }
 }

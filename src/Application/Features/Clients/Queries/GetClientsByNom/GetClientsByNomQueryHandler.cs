@@ -1,8 +1,8 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Queries.GetClientsByNom
 {
@@ -12,16 +12,13 @@ namespace Application.Features.Clients.Queries.GetClientsByNom
     public class GetClientsByNomQueryHandler : IRequestHandler<GetClientsByNomQuery, List<ClientResponseDto>>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetClientsByNomQueryHandler> _logger;
 
         public GetClientsByNomQueryHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<GetClientsByNomQueryHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -49,7 +46,7 @@ namespace Application.Features.Clients.Queries.GetClientsByNom
             // ============================================
             // 3. Mapper et retourner
             // ============================================
-            return _mapper.Map<List<ClientResponseDto>>(limitedClients);
+            return limitedClients.ToResponseDtos();
         }
     }
 }

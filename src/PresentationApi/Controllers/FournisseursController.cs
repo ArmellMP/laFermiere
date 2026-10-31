@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Fournisseurs;
 using PresentationApi.Models.Responses;
 using Application.Features.Fournisseurs.Queries.GetAllFournisseurs;
@@ -12,6 +11,7 @@ using Application.Features.Fournisseurs.Queries.GetFournisseursByType;
 using Application.Features.Fournisseurs.Commands.CreateFournisseur;
 using Application.Features.Fournisseurs.Commands.UpdateFournisseur;
 using Application.Features.Fournisseurs.Commands.DeleteFournisseur;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -21,16 +21,13 @@ namespace PresentationApi.Controllers
     public class FournisseursController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<FournisseursController> _logger;
 
         public FournisseursController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<FournisseursController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -55,7 +52,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<FournisseurResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -68,7 +65,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetFournisseurByIdQuery { Id = id };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<FournisseurResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -82,7 +79,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetFournisseursByNomQuery { SearchTerm = term, Limit = limit };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<FournisseurResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -99,7 +96,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<FournisseurResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -114,10 +111,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouveau fournisseur: {Nom}", request.Nom);
 
-            var command = _mapper.Map<CreateFournisseurCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<FournisseurResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -134,10 +131,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour du fournisseur {FournisseurId}", id);
 
-            var command = _mapper.Map<UpdateFournisseurCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<FournisseurResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

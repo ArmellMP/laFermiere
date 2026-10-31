@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Parametres.Interfaces;
 using Application.Features.Parametres.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Parametres.Queries.GetAllParametres
 {
     public class GetAllParametresQueryHandler : IRequestHandler<GetAllParametresQuery, List<ParametreResponseDto>>
     {
         private readonly IParametreRepository _parametreRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllParametresQueryHandler> _logger;
 
         public GetAllParametresQueryHandler(
             IParametreRepository parametreRepository,
-            IMapper mapper,
             ILogger<GetAllParametresQueryHandler> logger)
         {
             _parametreRepository = parametreRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -58,7 +55,7 @@ namespace Application.Features.Parametres.Queries.GetAllParametres
                 parametres = await _parametreRepository.GetAllAsync(cancellationToken);
             }
 
-            return _mapper.Map<List<ParametreResponseDto>>(parametres);
+            return parametres.ToResponseDtos();
         }
     }
 }

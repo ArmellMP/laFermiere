@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Parametres;
 using PresentationApi.Models.Responses;
 using Application.Features.Parametres.Queries.GetAllParametres;
@@ -11,6 +10,7 @@ using Application.Features.Parametres.Queries.GetParametreByCle;
 using Application.Features.Parametres.Commands.CreateParametre;
 using Application.Features.Parametres.Commands.UpdateParametre;
 using Application.Features.Parametres.Commands.DeleteParametre;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -20,16 +20,13 @@ namespace PresentationApi.Controllers
     public class ParametresController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<ParametresController> _logger;
 
         public ParametresController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<ParametresController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -54,7 +51,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<ParametreResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -67,7 +64,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetParametreByIdQuery { Id = id };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<ParametreResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -80,7 +77,7 @@ namespace PresentationApi.Controllers
 
             var query = new GetParametreByCleQuery { Cle = cle };
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<ParametreResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -95,10 +92,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouveau paramètre: {Cle}", request.Cle);
 
-            var command = _mapper.Map<CreateParametreCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<ParametreResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -115,10 +112,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour du paramètre {ParametreId}", id);
 
-            var command = _mapper.Map<UpdateParametreCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<ParametreResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

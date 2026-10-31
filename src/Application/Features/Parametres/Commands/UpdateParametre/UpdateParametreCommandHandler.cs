@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Parametres.Interfaces;
 using Application.Features.Parametres.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Parametres.Commands.UpdateParametre
 {
     public class UpdateParametreCommandHandler : IRequestHandler<UpdateParametreCommand, ParametreResponseDto>
     {
         private readonly IParametreRepository _parametreRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateParametreCommandHandler> _logger;
 
         public UpdateParametreCommandHandler(
             IParametreRepository parametreRepository,
-            IMapper mapper,
             ILogger<UpdateParametreCommandHandler> logger)
         {
             _parametreRepository = parametreRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -72,7 +69,7 @@ namespace Application.Features.Parametres.Commands.UpdateParametre
             _logger.LogInformation("Paramètre {ParametreId} mis à jour avec succès", updateDto.Id);
 
             // 5. Retour de la réponse
-            return _mapper.Map<ParametreResponseDto>(existingParametre);
+            return existingParametre.ToResponseDto();
         }
     }
 }

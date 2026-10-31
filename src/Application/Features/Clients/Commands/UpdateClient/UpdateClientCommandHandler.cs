@@ -1,11 +1,11 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Commands.UpdateClient
 {
@@ -15,16 +15,13 @@ namespace Application.Features.Clients.Commands.UpdateClient
     public class UpdateClientCommandHandler : IRequestHandler<UpdateClientCommand, ClientResponseDto>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateClientCommandHandler> _logger;
 
         public UpdateClientCommandHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<UpdateClientCommandHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -96,7 +93,7 @@ namespace Application.Features.Clients.Commands.UpdateClient
             // ============================================
             // 5. Retour de la réponse
             // ============================================
-            return _mapper.Map<ClientResponseDto>(existingClient);
+            return existingClient.ToResponseDto();
         }
     }
 }

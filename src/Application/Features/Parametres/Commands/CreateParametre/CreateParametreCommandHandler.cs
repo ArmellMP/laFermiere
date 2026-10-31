@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Parametres.Interfaces;
 using Application.Features.Parametres.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Parametres.Commands.CreateParametre
 {
     public class CreateParametreCommandHandler : IRequestHandler<CreateParametreCommand, ParametreResponseDto>
     {
         private readonly IParametreRepository _parametreRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateParametreCommandHandler> _logger;
 
         public CreateParametreCommandHandler(
             IParametreRepository parametreRepository,
-            IMapper mapper,
             ILogger<CreateParametreCommandHandler> logger)
         {
             _parametreRepository = parametreRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -75,7 +72,7 @@ namespace Application.Features.Parametres.Commands.CreateParametre
             // ============================================
             // 5. Retour de la réponse
             // ============================================
-            return _mapper.Map<ParametreResponseDto>(createdParametre);
+            return createdParametre.ToResponseDto();
         }
     }
 }

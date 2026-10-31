@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Fournisseurs.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Fournisseurs.Commands.CreateFournisseur
 {
     public class CreateFournisseurCommandHandler : IRequestHandler<CreateFournisseurCommand, FournisseurResponseDto>
     {
         private readonly IFournisseurRepository _fournisseurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateFournisseurCommandHandler> _logger;
 
         public CreateFournisseurCommandHandler(
             IFournisseurRepository fournisseurRepository,
-            IMapper mapper,
             ILogger<CreateFournisseurCommandHandler> logger)
         {
             _fournisseurRepository = fournisseurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -60,7 +57,7 @@ namespace Application.Features.Fournisseurs.Commands.CreateFournisseur
             _logger.LogInformation("Fournisseur créé avec succès : ID {FournisseurId}", createdFournisseur.Id);
 
             // Retour de la réponse
-            return _mapper.Map<FournisseurResponseDto>(createdFournisseur);
+            return createdFournisseur.ToResponseDto();
         }
     }
 }
