@@ -1,7 +1,13 @@
 -- ============================================================================
 -- SCHÉMA COMPLET DE LA BASE lafermiere (MySQL / MariaDB)
--- Source : script d'origine (Wuba\BDD.docx) + corrections des migrations.
+-- Source : script d'origine (Wuba\BDD.docx), aligné le 2026-10-31 sur la base
+--          réellement utilisée (structure comparée colonne par colonne),
+--          + corrections des migrations.
 -- Dernière migration intégrée : 001_corriger_trigger_achat.sql
+--
+-- RÈGLE : les valeurs des colonnes ENUM doivent être EXACTEMENT les noms des
+-- enums C# correspondants (Domain/Enums). Le code écrit enum.ToString() en base :
+-- un nom absent de l'ENUM SQL serait enregistré comme une chaîne vide.
 --
 -- ⚠️  ATTENTION : ce script commence par DROP DATABASE.
 --     Il SUPPRIME la base existante et TOUTES ses données.
@@ -179,12 +185,12 @@ CREATE TABLE Ventes (
     BandeId INT NOT NULL,
     ClientId INT NOT NULL,
     DateVente DATE NOT NULL,
-    TypeVente ENUM('PouletsVivants', 'PouletsAbattus', 'Fientes', 'Dechets', 'Plumes', 'Autre') NOT NULL,
+    TypeVente ENUM('PouletsVivants', 'PouletsNettoyes', 'PouletsFumes', 'Fientes', 'Autres') NOT NULL,  -- = enum C# TypeVente
     Quantite DECIMAL(10,2) NOT NULL,
     UniteMesure ENUM('Unite', 'Kg', 'Sac', 'Camion', 'Rouleau', 'Paquet') NOT NULL,
     PrixUnitaire DECIMAL(10,2) NOT NULL,
     MontantTotal DECIMAL(12,2) NOT NULL,
-    ModePaiement ENUM('Especes', 'MobileMoney', 'Virement', 'Cheque', 'Credit') NOT NULL DEFAULT 'Especes',
+    ModePaiement ENUM('Especes', 'PaiementMobile', 'VirementBancaire', 'Cheque', 'Credit') NOT NULL DEFAULT 'Especes',  -- = enum C# ModePaiement
     EstPaye BOOLEAN DEFAULT TRUE,
     DatePaiement DATE,
     Observations TEXT,
