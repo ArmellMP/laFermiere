@@ -31,3 +31,4 @@ Le mot de passe est demandé à l'exécution : ne jamais l'écrire dans un fichi
 | N° | Date | Description |
 |---|---|---|
 | 001 | 2026-10-31 | Trigger `trg_after_achat_insert` : poussins, services et transport n'entrent plus en stock ; unités vérifiées. |
+| 002 | 2026-10-31 | Colonne `UpdatedAt` ajoutée à `SuivisJournaliers` (la modification d'un suivi échouait). |

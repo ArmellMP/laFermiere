@@ -3,7 +3,7 @@
 -- Source : script d'origine (Wuba\BDD.docx), aligné le 2026-10-31 sur la base
 --          réellement utilisée (structure comparée colonne par colonne),
 --          + corrections des migrations.
--- Dernière migration intégrée : 001_corriger_trigger_achat.sql
+-- Dernière migration intégrée : 002_ajouter_updatedat_suivis.sql
 --
 -- RÈGLE : les valeurs des colonnes ENUM doivent être EXACTEMENT les noms des
 -- enums C# correspondants (Domain/Enums). Le code écrit enum.ToString() en base :
@@ -156,6 +156,7 @@ CREATE TABLE SuivisJournaliers (
     Temperature DECIMAL(4,1),
     Observations TEXT,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- migration 002
     CreatedBy INT,
     FOREIGN KEY (BandeId) REFERENCES Bandes(Id) ON DELETE CASCADE,
     FOREIGN KEY (StockConsommeId) REFERENCES Stocks(Id),

@@ -31,7 +31,9 @@ namespace Application.Features.SuivisJournaliers.Queries.GetSuiviStats
         public int TotalSuivis { get; set; }
         public int TotalMortalites { get; set; }
         public decimal? PoidsMoyenGlobal { get; set; }
-        public decimal TemperatureMoyenne { get; set; }
+        // Nullable comme PoidsMoyenGlobal : null = aucune température relevée sur la période
+        // (0 °C serait une fausse valeur).
+        public decimal? TemperatureMoyenne { get; set; }
         public int JoursAvecSoins { get; set; }
         public decimal? ConsommationMoyenneParJour { get; set; }
         
