@@ -8,7 +8,7 @@ namespace Application.Features.Bandes.Commands.DeleteBande
     /// Handler pour supprimer une bande.
     /// </summary>
     public class DeleteBandeCommandHandler 
-        : IRequestHandler<DeleteBandeCommand, bool>
+        : IRequestHandler<DeleteBandeCommand, Unit>
     {
         private readonly IBandeRepository _bandeRepository;
 
@@ -17,30 +17,31 @@ namespace Application.Features.Bandes.Commands.DeleteBande
             _bandeRepository = bandeRepository;
         }
 
-        public async Task<bool> Handle(
-            DeleteBandeCommand request, 
+        public async Task<Unit> Handle(
+            DeleteBandeCommand request,
             CancellationToken cancellationToken)
         {
             // 1. Vérifier que la bande existe
             var existingBande = await _bandeRepository.GetByIdAsync(
-                request.Id, 
+                request.Id,
                 cancellationToken);
-                
+
             if (existingBande == null)
             {
-                // Retourner false plutôt qu'une exception
-                // "Non trouvé" n'est pas une erreur pour une suppression
-                return false;
+                // Même convention que les autres entités : NotFoundException => HTTP 404.
+                // (Avant : on retournait false, mais le contrôleur ignorait ce booléen
+                // et répondait 204 "supprimé" pour une bande qui n'existait pas.)
+                throw new NotFoundException($"Bande avec l'ID {request.Id} non trouvée.");
             }
-            
+
             // 2. Valider qu'on peut supprimer cette bande
             ValidateCanDelete(existingBande);
-            
+
             // 3. Supprimer la bande
             await _bandeRepository.DeleteAsync(request.Id, cancellationToken);
-            
-            // 4. Retourner true (suppression réussie)
-            return true;
+
+            // 4. Unit.Value = "terminé, rien à retourner"
+            return Unit.Value;
         }
         
         /// <summary>

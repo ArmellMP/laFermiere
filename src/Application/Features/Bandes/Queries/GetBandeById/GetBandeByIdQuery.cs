@@ -3,7 +3,12 @@ using MediatR;
 
 namespace Application.Features.Bandes.Queries.GetBandeById
 {
-    public record GetBandeByIdQuery : IRequest<BandeResponseDto?>
+    /// <summary>
+    /// Query pour récupérer une bande par son ID.
+    /// Retourne toujours un DTO : si la bande n'existe pas, le handler lève
+    /// NotFoundException (=> HTTP 404), comme pour toutes les autres entités.
+    /// </summary>
+    public record GetBandeByIdQuery : IRequest<BandeResponseDto>
     {
         /// <summary>
         /// ID de la bande à récupérer.
