@@ -1,9 +1,8 @@
-﻿using PresentationApi.Security;
+﻿// PresentationApi/Controllers/BandesController.cs
+using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
-// PresentationApi/Controllers/BandesController.cs
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using Domain.Enums;
 using PresentationApi.Models.Requests.Bandes;
 using PresentationApi.Models.Responses;
@@ -15,6 +14,7 @@ using Application.Features.Bandes.Commands.CreateBande;
 using Application.Features.Bandes.Commands.UpdateBande;
 using Application.Features.Bandes.Commands.CloturerBande;
 using Application.Features.Bandes.Commands.DeleteBande;
+using PresentationApi.Mappings;
 using Application.Features.Bandes.Dtos;                        
 namespace PresentationApi.Controllers
 {
@@ -26,16 +26,13 @@ namespace PresentationApi.Controllers
     public class BandesController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<BandesController> _logger;
 
         public BandesController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<BandesController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -53,7 +50,7 @@ namespace PresentationApi.Controllers
             var query = new GetAllBandesQuery { IncludeDetails = includeDetails };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<List<BandeResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -72,7 +69,7 @@ namespace PresentationApi.Controllers
             var query = new GetBandeByIdQuery { Id = id };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<BandeResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -97,7 +94,7 @@ namespace PresentationApi.Controllers
             var query = new GetBandesByStatutQuery { Statut = statutEnum };
             var result = await _mediator.Send(query);
             
-            var response = _mapper.Map<List<BandeResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -114,10 +111,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'une nouvelle bande");
             
-            var command = _mapper.Map<CreateBandeCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<BandeResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -141,10 +138,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour de la bande {BandeId}", id);
             
-            var command = _mapper.Map<UpdateBandeCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<BandeResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -168,10 +165,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Clôture de la bande {BandeId}", id);
             
-            var command = _mapper.Map<CloturerBandeCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
             
-            var response = _mapper.Map<BandeResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

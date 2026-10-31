@@ -1,10 +1,10 @@
 using Application.Common.Exceptions;
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Interfaces;
-using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
 using MediatR;
+using Application.Common.Mappings;
 
 namespace Application.Features.Bandes.Commands.CreateBande
 {
@@ -15,14 +15,11 @@ namespace Application.Features.Bandes.Commands.CreateBande
         : IRequestHandler<CreateBandeCommand, BandeResponseDto>
     {
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
 
         public CreateBandeCommandHandler(
-            IBandeRepository bandeRepository,
-            IMapper mapper)
+            IBandeRepository bandeRepository)
         {
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
         }
 
         public async Task<BandeResponseDto> Handle(
@@ -51,7 +48,7 @@ namespace Application.Features.Bandes.Commands.CreateBande
             var createdBande = await _bandeRepository.AddAsync(bande, cancellationToken);
             
             // 4. Convertir en DTO pour la réponse
-            var bandeDto = _mapper.Map<BandeResponseDto>(createdBande);
+            var bandeDto = createdBande.ToResponseDto();
             
             return bandeDto;
         }

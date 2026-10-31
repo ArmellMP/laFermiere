@@ -1,7 +1,7 @@
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Interfaces;
-using AutoMapper;
 using MediatR;
+using Application.Common.Mappings;
 
 namespace Application.Features.Bandes.Queries.GetAllBandes
 {
@@ -12,14 +12,11 @@ namespace Application.Features.Bandes.Queries.GetAllBandes
         : IRequestHandler<GetAllBandesQuery, List<BandeResponseDto>>
     {
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
 
         public GetAllBandesQueryHandler(
-            IBandeRepository bandeRepository,
-            IMapper mapper)
+            IBandeRepository bandeRepository)
         {
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
         }
 
         public async Task<List<BandeResponseDto>> Handle(
@@ -30,7 +27,7 @@ namespace Application.Features.Bandes.Queries.GetAllBandes
             var bandes = await _bandeRepository.GetAllAsync(cancellationToken);
             
             // Convertir en DTOs
-            var bandeDtos = _mapper.Map<List<BandeResponseDto>>(bandes);
+            var bandeDtos = bandes.ToResponseDtos();
             
             // Inclure les détails si demandé, request.IncludeDetails vient du record
             if (request.IncludeDetails)

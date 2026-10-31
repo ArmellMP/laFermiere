@@ -1,8 +1,8 @@
 using Application.Common.Exceptions;
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Interfaces;
-using AutoMapper;
 using MediatR;
+using Application.Common.Mappings;
 
 namespace Application.Features.Bandes.Queries.GetBandeById
 {
@@ -10,14 +10,11 @@ namespace Application.Features.Bandes.Queries.GetBandeById
         : IRequestHandler<GetBandeByIdQuery, BandeResponseDto>
     {
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
 
         public GetBandeByIdQueryHandler(
-            IBandeRepository bandeRepository,
-            IMapper mapper)
+            IBandeRepository bandeRepository)
         {
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
         }
 
         public async Task<BandeResponseDto> Handle(
@@ -37,7 +34,7 @@ namespace Application.Features.Bandes.Queries.GetBandeById
                 throw new NotFoundException($"Bande avec l'ID {request.Id} non trouvée.");
             
             // 3. Convertir en DTO
-            var bandeDto = _mapper.Map<BandeResponseDto>(bande);
+            var bandeDto = bande.ToResponseDto();
             
             // 4. Inclure les détails si demandé
             if (request.IncludeDetails)
