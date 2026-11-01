@@ -34,7 +34,7 @@ namespace Application.Features.Bandes.Commands.CreateBande
             // 2. Créer l'entité Domain (plus de AutoMapper ici pour plus de contrôle)
             var bande = new Bande
             {
-                Code = GenerateCodeIfNeeded(createDto),
+                Code = await GenerateCodeIfNeededAsync(createDto, cancellationToken),
                 DateArrivee = createDto.DateArrivee,
                 NbPoussinsInit = createDto.NbPoussinsInit,
                 NbPoussinsActuel = createDto.NbPoussinsInit, // Au départ = initial
@@ -78,25 +78,39 @@ namespace Application.Features.Bandes.Commands.CreateBande
         /// <summary>
         /// Génère un code si non fourni.
         /// </summary>
-        private string GenerateCodeIfNeeded(CreateBandeDto dto)
+        private async Task<string> GenerateCodeIfNeededAsync(CreateBandeDto dto, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(dto.Code))
                 return dto.Code;
-                
-            return GenerateBandeCode(dto.DateArrivee);
+
+            return await GenerateBandeCodeAsync(dto.DateArrivee, cancellationToken);
         }
-        
+
         /// <summary>
         /// Génère un code unique pour une bande.
         /// Format : ANNEE-MOIS-JOUR-NUM (ex: 2024-01-08-001)
+        ///
+        /// NUM = premier numéro libre pour cette date : 001, sinon 002, etc.
+        /// (Avant : toujours "001". Deux bandes arrivées le même jour avaient le même code,
+        ///  et la contrainte UNIQUE de la colonne Code provoquait une erreur 500.
+        ///  Bug trouvé par le test d'intégration DeuxBandesSansCodeLeMemeJour_CodesDifferents.)
         /// </summary>
-        private string GenerateBandeCode(DateTime dateArrivee)
+        private async Task<string> GenerateBandeCodeAsync(DateTime dateArrivee, CancellationToken cancellationToken)
         {
-            // TODO: Améliorer avec une vraie séquence depuis la base de données
             var datePart = dateArrivee.ToString("yyyy-MM-dd");
-            var sequenceNumber = "001"; // À remplacer par une vraie logique
-            
-            return $"{datePart}-{sequenceNumber}";
+
+            // 999 bandes le même jour : largement au-delà d'un élevage réel
+            for (var numero = 1; numero <= 999; numero++)
+            {
+                var code = $"{datePart}-{numero:000}";   // :000 = sur 3 chiffres (1 -> "001")
+                if (!await _bandeRepository.CodeExistsAsync(code, cancellationToken))
+                {
+                    return code;
+                }
+            }
+
+            throw new BusinessRuleException(
+                $"Plus aucun code automatique disponible pour le {dateArrivee:dd/MM/yyyy}. Indiquez un code manuellement.");
         }
     }
 }
