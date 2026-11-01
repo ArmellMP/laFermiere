@@ -1,4 +1,5 @@
 ﻿// PresentationApi/Controllers/BandesController.cs
+using Application.Common.Exceptions;
 using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
@@ -88,7 +89,8 @@ namespace PresentationApi.Controllers
             // Convertir string → enum
             if (!Enum.TryParse<StatutBande>(statut, true, out var statutEnum))
             {
-                return BadRequest($"Statut invalide. Valeurs possibles: {string.Join(", ", Enum.GetNames<StatutBande>())}");
+                // Exception plutôt que BadRequest("texte") : ExceptionMiddleware renvoie le format commun ErrorResponse (400)
+                throw new BusinessRuleException($"Statut invalide. Valeurs possibles: {string.Join(", ", Enum.GetNames<StatutBande>())}");
             }
             
             var query = new GetBandesByStatutQuery { Statut = statutEnum };
@@ -133,7 +135,8 @@ namespace PresentationApi.Controllers
         {
             if (id != request.Id)
             {
-                return BadRequest("L'ID dans l'URL ne correspond pas à l'ID dans le corps de la requête.");
+                // Exception plutôt que BadRequest("texte") : ExceptionMiddleware renvoie le format commun ErrorResponse (400)
+                throw new BusinessRuleException("L'ID dans l'URL ne correspond pas à l'ID dans le corps de la requête.");
             }
 
             _logger.LogInformation("Mise à jour de la bande {BandeId}", id);
@@ -160,7 +163,8 @@ namespace PresentationApi.Controllers
         {
             if (id != request.Id)
             {
-                return BadRequest("L'ID dans l'URL ne correspond pas à l'ID dans le corps de la requête.");
+                // Exception plutôt que BadRequest("texte") : ExceptionMiddleware renvoie le format commun ErrorResponse (400)
+                throw new BusinessRuleException("L'ID dans l'URL ne correspond pas à l'ID dans le corps de la requête.");
             }
 
             _logger.LogInformation("Clôture de la bande {BandeId}", id);

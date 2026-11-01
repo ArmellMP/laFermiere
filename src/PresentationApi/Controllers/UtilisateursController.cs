@@ -1,4 +1,5 @@
 ﻿using PresentationApi.Security;
+using Application.Common.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -133,7 +134,8 @@ namespace PresentationApi.Controllers
         {
             if (id != request.Id)
             {
-                return BadRequest("L'ID dans l'URL ne correspond pas à l'ID dans la requête.");
+                // Exception plutôt que BadRequest("texte") : ExceptionMiddleware renvoie le format commun ErrorResponse (400)
+                throw new BusinessRuleException("L'ID dans l'URL ne correspond pas à l'ID dans la requête.");
             }
 
             _logger.LogInformation("Mise à jour de l'utilisateur {UtilisateurId}", id);

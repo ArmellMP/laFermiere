@@ -4,6 +4,7 @@ using System.Text.Json;
 using Application.Common.Exceptions;
 using FluentValidation;
 using MySqlConnector;
+using PresentationApi.Models.Responses;
 
 namespace PresentationApi.Middlewares
 {
@@ -53,9 +54,9 @@ namespace PresentationApi.Middlewares
             var response = context.Response;
             response.ContentType = "application/json";
 
-            var result = new
+            // Même format que les erreurs DataAnnotations (voir Program.cs) : ErrorResponse
+            var result = new ErrorResponse
             {
-                Success = false,
                 Message = GetUserFriendlyMessage(exception),
                 Errors = GetErrors(exception),
                 TraceId = context.TraceIdentifier,
@@ -86,7 +87,7 @@ namespace PresentationApi.Middlewares
         {
             return exception switch
             {
-                ValidationException => "Les données envoyées ne sont pas valides.",
+                ValidationException => ErrorResponse.MessageValidation,
                 NotFoundException => exception.Message,
                 BusinessRuleException => exception.Message,
                 UnauthorizedAccessException => "Vous n'êtes pas autorisé à effectuer cette action.",
@@ -97,13 +98,20 @@ namespace PresentationApi.Middlewares
             };
         }
 
-        private static List<string>? GetErrors(Exception exception)
+        /// <summary>
+        /// Erreurs FluentValidation regroupées par champ : { "nbPoussinsInit": ["...", "..."] }.
+        /// null pour toute autre exception (pas d'erreurs par champ).
+        /// </summary>
+        private static Dictionary<string, string[]>? GetErrors(Exception exception)
         {
             if (exception is ValidationException validationException)
             {
                 return validationException.Errors
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
+                    // PropertyName vaut par ex. "CreateBandeDto.NbPoussinsInit" -> "nbPoussinsInit"
+                    .GroupBy(e => ErrorResponse.NomDeChamp(e.PropertyName))
+                    .ToDictionary(
+                        groupe => groupe.Key,
+                        groupe => groupe.Select(e => e.ErrorMessage).Distinct().ToArray());
             }
 
             return null;
