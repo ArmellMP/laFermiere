@@ -1,9 +1,9 @@
 // Application/Features/Stocks/Queries/GetStockById/GetStockByIdQueryHandler.cs
 using MediatR;
-using AutoMapper;
 using Application.Common.Exceptions;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Queries.GetStockById
 {
@@ -13,14 +13,11 @@ namespace Application.Features.Stocks.Queries.GetStockById
     public class GetStockByIdQueryHandler : IRequestHandler<GetStockByIdQuery, StockResponseDto>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public GetStockByIdQueryHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<StockResponseDto> Handle(
@@ -37,7 +34,7 @@ namespace Application.Features.Stocks.Queries.GetStockById
             }
             
             // 3. Mapper et retourner
-            return _mapper.Map<StockResponseDto>(stock);
+            return stock.ToResponseDto();
         }
     }
 }

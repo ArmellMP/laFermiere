@@ -1,10 +1,10 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Queries.GetClientsByType
 {
@@ -14,16 +14,13 @@ namespace Application.Features.Clients.Queries.GetClientsByType
     public class GetClientsByTypeQueryHandler : IRequestHandler<GetClientsByTypeQuery, List<ClientResponseDto>>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetClientsByTypeQueryHandler> _logger;
 
         public GetClientsByTypeQueryHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<GetClientsByTypeQueryHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -59,7 +56,7 @@ namespace Application.Features.Clients.Queries.GetClientsByType
             // ============================================
             // 4. Mapper et retourner
             // ============================================
-            return _mapper.Map<List<ClientResponseDto>>(clients);
+            return clients.ToResponseDtos();
         }
     }
 }

@@ -1,7 +1,7 @@
 using MediatR;
-using AutoMapper;
 using Application.Features.Stocks.Interfaces;
 using Application.Features.Stocks.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Stocks.Queries.GetStocksByBande
 {
@@ -11,14 +11,11 @@ namespace Application.Features.Stocks.Queries.GetStocksByBande
     public class GetStocksByBandeQueryHandler : IRequestHandler<GetStocksByBandeQuery, List<StockResponseDto>>
     {
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
 
         public GetStocksByBandeQueryHandler(
-            IStockRepository stockRepository,
-            IMapper mapper)
+            IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
-            _mapper = mapper;
         }
 
         public async Task<List<StockResponseDto>> Handle(
@@ -29,7 +26,7 @@ namespace Application.Features.Stocks.Queries.GetStocksByBande
             var stocks = await _stockRepository.GetByBandeIdAsync(request.BandeId, cancellationToken);
             
             // 2. Mapper et retourner
-            return _mapper.Map<List<StockResponseDto>>(stocks);
+            return stocks.ToResponseDtos();
         }
     }
 }

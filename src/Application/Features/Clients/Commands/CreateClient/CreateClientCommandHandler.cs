@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Commands.CreateClient
 {
     public class CreateClientCommandHandler : IRequestHandler<CreateClientCommand, ClientResponseDto>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateClientCommandHandler> _logger;
 
         public CreateClientCommandHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<CreateClientCommandHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 

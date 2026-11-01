@@ -1,8 +1,12 @@
-using PresentationAPI.Extensions;
-using PresentationAPI.Middlewares;
+using PresentationApi.Extensions;
+using PresentationApi.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Application.Common.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +21,32 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Documentation OpenAPI : générateur intégré à .NET 10 (remplace AddSwaggerGen,
+// qui n'était plus compatible). Le document est servi sur /openapi/v1.json.
+builder.Services.AddOpenApi(options =>
+{
+    // Déclare l'authentification "Bearer JWT" dans le document OpenAPI :
+    // Swagger affiche alors un bouton "Authorize" pour saisir le jeton.
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new Microsoft.OpenApi.OpenApiComponents();
+        document.Components.SecuritySchemes ??=
+            new Dictionary<string, Microsoft.OpenApi.IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["Bearer"] = new Microsoft.OpenApi.OpenApiSecurityScheme
+        {
+            Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Colle ici le jeton reçu de /api/v1/Utilisateurs/authenticate"
+        };
+        document.Security ??= [];
+        document.Security.Add(new Microsoft.OpenApi.OpenApiSecurityRequirement
+        {
+            [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document)] = []
+        });
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddCors(options =>
 {
@@ -33,9 +61,41 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddApplicationServices(builder.Configuration);
 
+// ============================================
+// CONFIGURATION JWT
+// ============================================
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var issuer = jwtSettings["Issuer"] ?? "LaFermiereAPI";
+var audience = jwtSettings["Audience"] ?? "LaFermiereClient";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddScoped<IJwtService, JwtService>();
+
 var app = builder.Build();
 
-// ✅ DIAGNOSTIC
+// ============================================
+// DIAGNOSTIC
+// ============================================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -90,7 +150,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ ERREUR IFournisseurRepository: {ex.Message}");
     }
     
-    // ✅ NOUVEAU : Vérification Vente
     try
     {
         var venteRepo = services.GetRequiredService<Application.Features.Ventes.Interfaces.IVenteRepository>();
@@ -99,6 +158,56 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"❌ ERREUR IVenteRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var achatRepo = services.GetRequiredService<Application.Features.Achats.Interfaces.IAchatRepository>();
+        Console.WriteLine("✅ IAchatRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IAchatRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var utilisateurRepo = services.GetRequiredService<Application.Features.Utilisateurs.Interfaces.IUtilisateurRepository>();
+        Console.WriteLine("✅ IUtilisateurRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IUtilisateurRepository: {ex.Message}");
+    }
+
+    try
+    {
+        var parametreRepo = services.GetRequiredService<Application.Features.Parametres.Interfaces.IParametreRepository>();
+        Console.WriteLine("✅ IParametreRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IParametreRepository: {ex.Message}");
+    }
+
+    try
+    {
+        var alerteRepo = services.GetRequiredService<Application.Features.Alertes.Interfaces.IAlerteRepository>();
+        Console.WriteLine("✅ IAlerteRepository est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IAlerteRepository: {ex.Message}");
+    }
+    
+    try
+    {
+        var jwtService = services.GetRequiredService<IJwtService>();
+        Console.WriteLine("✅ IJwtService est bien enregistré !");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ ERREUR IJwtService: {ex.Message}");
     }
     
     try
@@ -118,24 +227,31 @@ using (var scope = app.Services.CreateScope())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+// Swagger : uniquement en développement (pas exposé en production)
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();   // publie /openapi/v1.json
+    app.UseSwaggerUI(options =>
+    {
+        // L'interface /swagger lit le document généré par MapOpenApi
+        options.SwaggerEndpoint("/openapi/v1.json", "La Fermière API v1");
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// Tous les contrôleurs exigent un utilisateur authentifié (jeton JWT valide).
+// Exception : les actions marquées [AllowAnonymous], comme /authenticate.
+app.MapControllers().RequireAuthorization();
 app.MapHealthChecks("/health");
 
 app.MapGet("/", () => Results.Json(new
 {
     message = "Bienvenue sur l'API La Fermière",
     version = "1.0.0",
-    documentation = "/swagger",
     health = "/health"
 }));
 

@@ -1,8 +1,8 @@
-// PresentationAPI/Models/Requests/CreateBandeRequest.cs
+// PresentationApi/Models/Requests/CreateBandeRequest.cs
 
 using System.ComponentModel.DataAnnotations;
 
-namespace PresentationAPI.Models.Requests.Bandes
+namespace PresentationApi.Models.Requests.Bandes
 {
     /// <summary>
     /// Requête pour créer une nouvelle bande.

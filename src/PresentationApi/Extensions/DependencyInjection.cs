@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Application;      // Pour AddApplication()
-using Infrastructure;   // Pour AddInfrastructure()
-using System.Reflection; // Pour Assembly
+using Application;
+using Infrastructure;
 
-namespace PresentationAPI.Extensions
+namespace PresentationApi.Extensions
 {
     public static class DependencyInjection
     {
@@ -12,16 +11,16 @@ namespace PresentationAPI.Extensions
             this IServiceCollection services, 
             IConfiguration configuration)
         {
-            // ✅ 1. Services de la couche Application (MediatR, AutoMapper)
+            // ✅ 1. Services de la couche Application (MediatR, FluentValidation)
             services.AddApplication();
-            
+
             // ✅ 2. Services de la couche Infrastructure (Repositories)
             services.AddInfrastructure(configuration);
-            
-            // ✅ 3. AutoMapper pour les Profiles de PresentationAPI
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
-            
-            // ✅ 4. Services spécifiques à l'API
+
+            // (Le mapping Requests/Responses <-> Commands/DTOs se fait par des méthodes
+            //  d'extension statiques dans PresentationApi/Mappings : rien à enregistrer.)
+
+            // ✅ 3. Services spécifiques à l'API
             services.AddHttpClient();
             services.AddMemoryCache();
             services.AddHealthChecks();

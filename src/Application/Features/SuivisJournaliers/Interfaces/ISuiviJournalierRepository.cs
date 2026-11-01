@@ -23,9 +23,21 @@ namespace Application.Features.SuivisJournaliers.Interfaces
         /// Récupère les suivis d'une bande pour une période donnée
         /// </summary>
         Task<IEnumerable<SuiviJournalier>> GetByBandeIdAndDateRangeAsync(
-            int bandeId, 
-            DateTime dateDebut, 
-            DateTime dateFin, 
+            int bandeId,
+            DateTime dateDebut,
+            DateTime dateFin,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Récupère les suivis selon des filtres TOUS facultatifs (null = pas de filtre) :
+        /// - bandeId : une seule bande, ou toutes les bandes si null
+        /// - dateDebut / dateFin : bornes incluses, chacune peut être absente
+        /// Utilisé notamment pour les statistiques globales (toutes bandes confondues).
+        /// </summary>
+        Task<IEnumerable<SuiviJournalier>> GetByFiltresAsync(
+            int? bandeId,
+            DateTime? dateDebut,
+            DateTime? dateFin,
             CancellationToken cancellationToken = default);
         
         /// <summary>

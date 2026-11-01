@@ -1,6 +1,5 @@
 // Application/Features/SuivisJournaliers/Commands/UpdateSuivi/UpdateSuiviCommandHandler.cs
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.SuivisJournaliers.Interfaces;
@@ -9,6 +8,7 @@ using Application.Features.Bandes.Interfaces;
 using Application.Features.Stocks.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.SuivisJournaliers.Commands.UpdateSuivi
 {
@@ -21,20 +21,17 @@ namespace Application.Features.SuivisJournaliers.Commands.UpdateSuivi
         private readonly ISuiviJournalierRepository _suiviRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IStockRepository _stockRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateSuiviCommandHandler> _logger;
 
         public UpdateSuiviCommandHandler(
             ISuiviJournalierRepository suiviRepository,
             IBandeRepository bandeRepository,
             IStockRepository stockRepository,
-            IMapper mapper,
             ILogger<UpdateSuiviCommandHandler> logger)
         {
             _suiviRepository = suiviRepository;
             _bandeRepository = bandeRepository;
             _stockRepository = stockRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -125,7 +122,11 @@ namespace Application.Features.SuivisJournaliers.Commands.UpdateSuivi
             // ============================================
             // 8. Retourner la réponse
             // ============================================
-            return _mapper.Map<SuiviResponseDto>(existingSuivi);
+            var suiviDto = existingSuivi.ToResponseDto();
+            // AgeEnJours (calculé par le DTO) = DateSuivi - DateArriveeBande.
+            // Sans cette ligne, DateArriveeBande vaut 01/01/0001 et l'âge affiché est absurde.
+            suiviDto.DateArriveeBande = bande.DateArrivee;
+            return suiviDto;
         }
 
         /// <summary>

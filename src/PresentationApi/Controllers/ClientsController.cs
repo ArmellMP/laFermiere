@@ -1,6 +1,7 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Clients;
 using PresentationApi.Models.Responses;
 using Application.Features.Clients.Queries.GetAllClients;
@@ -10,27 +11,26 @@ using Application.Features.Clients.Queries.GetClientsByType;
 using Application.Features.Clients.Commands.CreateClient;
 using Application.Features.Clients.Commands.UpdateClient;
 using Application.Features.Clients.Commands.DeleteClient;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
     /// <summary>
     /// Contrôleur pour la gestion des clients.
     /// </summary>
+    [Authorize(Roles = AppRoles.AdminComptable)]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class ClientsController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<ClientsController> _logger;
 
         public ClientsController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<ClientsController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -58,7 +58,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<ClientResponse>>(result);
+            var response = result.ToResponses();
 
             return Ok(response);
         }
@@ -76,7 +76,7 @@ namespace PresentationApi.Controllers
             var query = new GetClientByIdQuery { Id = id };
             var result = await _mediator.Send(query);
 
-            var response = _mapper.Map<ClientResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -94,7 +94,7 @@ namespace PresentationApi.Controllers
             var query = new GetClientsByNomQuery { SearchTerm = term, Limit = limit };
             var result = await _mediator.Send(query);
 
-            var response = _mapper.Map<List<ClientResponse>>(result);
+            var response = result.ToResponses();
             return Ok(response);
         }
 
@@ -114,7 +114,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<ClientResponse>>(result);
+            var response = result.ToResponses();
 
             return Ok(response);
         }
@@ -133,10 +133,10 @@ namespace PresentationApi.Controllers
         {
             _logger.LogInformation("Création d'un nouveau client: {Nom}", request.Nom);
 
-            var command = _mapper.Map<CreateClientCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<ClientResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -156,10 +156,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour du client {ClientId}", id);
 
-            var command = _mapper.Map<UpdateClientCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<ClientResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 

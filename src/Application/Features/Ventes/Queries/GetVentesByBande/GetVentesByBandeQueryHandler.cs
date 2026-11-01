@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Ventes.Interfaces;
 using Application.Features.Ventes.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Ventes.Queries.GetVentesByBande
 {
     public class GetVentesByBandeQueryHandler : IRequestHandler<GetVentesByBandeQuery, List<VenteResponseDto>>
     {
         private readonly IVenteRepository _venteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetVentesByBandeQueryHandler> _logger;
 
         public GetVentesByBandeQueryHandler(
             IVenteRepository venteRepository,
-            IMapper mapper,
             ILogger<GetVentesByBandeQueryHandler> logger)
         {
             _venteRepository = venteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -31,7 +28,7 @@ namespace Application.Features.Ventes.Queries.GetVentesByBande
 
             var ventes = await _venteRepository.GetByBandeIdAsync(request.BandeId, cancellationToken);
             
-            return _mapper.Map<List<VenteResponseDto>>(ventes);
+            return ventes.ToResponseDtos();
         }
     }
 }

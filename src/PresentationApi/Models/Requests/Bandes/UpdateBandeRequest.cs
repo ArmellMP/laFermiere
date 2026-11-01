@@ -1,8 +1,8 @@
-// PresentationAPI/Models/Requests/UpdateBandeRequest.cs
+// PresentationApi/Models/Requests/UpdateBandeRequest.cs
 
 using System.ComponentModel.DataAnnotations;
 
-namespace PresentationAPI.Models.Requests.Bandes
+namespace PresentationApi.Models.Requests.Bandes
 {
     /// <summary>
     /// Requête pour mettre à jour une bande existante.

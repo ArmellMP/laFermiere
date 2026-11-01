@@ -1,7 +1,7 @@
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Interfaces;
-using AutoMapper;
 using MediatR;
+using Application.Common.Mappings;
 
 namespace Application.Features.Bandes.Queries.GetBandesByStatut
 {
@@ -12,14 +12,11 @@ namespace Application.Features.Bandes.Queries.GetBandesByStatut
         : IRequestHandler<GetBandesByStatutQuery, List<BandeResponseDto>>
     {
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
 
         public GetBandesByStatutQueryHandler(
-            IBandeRepository bandeRepository,
-            IMapper mapper)
+            IBandeRepository bandeRepository)
         {
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
         }
 
         public async Task<List<BandeResponseDto>> Handle(
@@ -32,7 +29,7 @@ namespace Application.Features.Bandes.Queries.GetBandesByStatut
                 cancellationToken);
             
             // 2. Convertir en DTOs
-            var bandeDtos = _mapper.Map<List<BandeResponseDto>>(bandes);
+            var bandeDtos = bandes.ToResponseDtos();
             
             // 3. Inclure les détails si demandé
             if (request.IncludeDetails)

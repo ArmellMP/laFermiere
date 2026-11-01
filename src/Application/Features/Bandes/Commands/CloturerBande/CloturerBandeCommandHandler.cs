@@ -1,9 +1,9 @@
 using Application.Common.Exceptions;
 using Application.Features.Bandes.Dtos;
 using Application.Features.Bandes.Interfaces;
-using AutoMapper;
 using Domain.Enums;
 using MediatR;
+using Application.Common.Mappings;
 
 namespace Application.Features.Bandes.Commands.CloturerBande
 {
@@ -15,14 +15,11 @@ namespace Application.Features.Bandes.Commands.CloturerBande
         : IRequestHandler<CloturerBandeCommand, BandeResponseDto>
     {
         private readonly IBandeRepository _bandeRepository;
-        private readonly IMapper _mapper;
 
         public CloturerBandeCommandHandler(
-            IBandeRepository bandeRepository,
-            IMapper mapper)
+            IBandeRepository bandeRepository)
         {
             _bandeRepository = bandeRepository;
-            _mapper = mapper;
         }
 
         public async Task<BandeResponseDto> Handle(
@@ -45,7 +42,7 @@ namespace Application.Features.Bandes.Commands.CloturerBande
             await _bandeRepository.UpdateAsync(bande, cancellationToken);
             
             // 6. Convertir en DTO pour la réponse
-            var bandeDto = _mapper.Map<BandeResponseDto>(bande);
+            var bandeDto = bande.ToResponseDto();
             bandeDto.IncludeDetails = true; // Toujours inclure les détails après clôture
             
             return bandeDto;

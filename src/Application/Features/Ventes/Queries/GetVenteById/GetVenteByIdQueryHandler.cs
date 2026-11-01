@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Ventes.Interfaces;
 using Application.Features.Ventes.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Ventes.Queries.GetVenteById
 {
     public class GetVenteByIdQueryHandler : IRequestHandler<GetVenteByIdQuery, VenteResponseDto>
     {
         private readonly IVenteRepository _venteRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetVenteByIdQueryHandler> _logger;
 
         public GetVenteByIdQueryHandler(
             IVenteRepository venteRepository,
-            IMapper mapper,
             ILogger<GetVenteByIdQueryHandler> logger)
         {
             _venteRepository = venteRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -36,7 +33,7 @@ namespace Application.Features.Ventes.Queries.GetVenteById
                 throw new NotFoundException($"Vente avec l'ID {request.Id} non trouvée.");
             }
 
-            return _mapper.Map<VenteResponseDto>(vente);
+            return vente.ToResponseDto();
         }
     }
 }

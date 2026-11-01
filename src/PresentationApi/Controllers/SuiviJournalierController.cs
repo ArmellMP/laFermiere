@@ -1,6 +1,7 @@
+﻿using PresentationApi.Security;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using AutoMapper;
 using PresentationApi.Models.Requests.Suivis;
 using PresentationApi.Models.Responses;
 using Application.Features.SuivisJournaliers.Queries.GetAllSuivisByBandeId;
@@ -9,6 +10,7 @@ using Application.Features.SuivisJournaliers.Queries.GetSuiviStats;
 using Application.Features.SuivisJournaliers.Commands.CreateSuivi;
 using Application.Features.SuivisJournaliers.Commands.UpdateSuivi;
 using Application.Features.SuivisJournaliers.Commands.DeleteSuivi;
+using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
 {
@@ -21,16 +23,13 @@ namespace PresentationApi.Controllers
     public class SuiviJournalierController : ControllerBase
     {
         private readonly IMediator _mediator;
-        private readonly IMapper _mapper;
         private readonly ILogger<SuiviJournalierController> _logger;
 
         public SuiviJournalierController(
             IMediator mediator,
-            IMapper mapper,
             ILogger<SuiviJournalierController> logger)
         {
             _mediator = mediator;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -69,7 +68,7 @@ namespace PresentationApi.Controllers
             };
 
             var result = await _mediator.Send(query);
-            var response = _mapper.Map<List<SuiviResponse>>(result);
+            var response = result.ToResponses();
 
             return Ok(response);
         }
@@ -89,7 +88,7 @@ namespace PresentationApi.Controllers
             var query = new GetSuiviByIdQuery { Id = id };
             var result = await _mediator.Send(query);
 
-            var response = _mapper.Map<SuiviResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -129,6 +128,7 @@ namespace PresentationApi.Controllers
         /// </summary>
         /// <param name="request">Données du suivi</param>
         /// <returns>Le suivi créé</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpPost]
         [ProducesResponseType(typeof(SuiviResponse), 201)]
         [ProducesResponseType(400)]
@@ -138,10 +138,10 @@ namespace PresentationApi.Controllers
                 "Création d'un suivi pour la bande {BandeId}, jour {Jour}", 
                 request.BandeId, request.Jour);
 
-            var command = _mapper.Map<CreateSuiviCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<SuiviResponse>(result);
+            var response = result.ToResponse();
             return CreatedAtAction(nameof(GetById), new { id = response.Id }, response);
         }
 
@@ -151,6 +151,7 @@ namespace PresentationApi.Controllers
         /// <param name="id">ID du suivi</param>
         /// <param name="request">Données de mise à jour</param>
         /// <returns>Le suivi mis à jour</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(SuiviResponse), 200)]
         [ProducesResponseType(400)]
@@ -164,10 +165,10 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour du suivi {SuiviId}", id);
 
-            var command = _mapper.Map<UpdateSuiviCommand>(request);
+            var command = request.ToCommand();
             var result = await _mediator.Send(command);
 
-            var response = _mapper.Map<SuiviResponse>(result);
+            var response = result.ToResponse();
             return Ok(response);
         }
 
@@ -176,6 +177,7 @@ namespace PresentationApi.Controllers
         /// </summary>
         /// <param name="id">ID du suivi</param>
         /// <returns>Confirmation de suppression</returns>
+        [Authorize(Roles = AppRoles.AdminFermierVeterinaire)]
         [HttpDelete("{id}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]

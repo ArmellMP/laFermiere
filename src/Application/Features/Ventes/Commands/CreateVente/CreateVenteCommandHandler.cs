@@ -1,5 +1,4 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Ventes.Interfaces;
@@ -8,6 +7,7 @@ using Application.Features.Bandes.Interfaces;
 using Application.Features.Clients.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Ventes.Commands.CreateVente
 {
@@ -16,20 +16,17 @@ namespace Application.Features.Ventes.Commands.CreateVente
         private readonly IVenteRepository _venteRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<CreateVenteCommandHandler> _logger;
 
         public CreateVenteCommandHandler(
             IVenteRepository venteRepository,
             IBandeRepository bandeRepository,
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<CreateVenteCommandHandler> logger)
         {
             _venteRepository = venteRepository;
             _bandeRepository = bandeRepository;
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -141,7 +138,7 @@ namespace Application.Features.Ventes.Commands.CreateVente
             // ============================================
             // 9. Retour de la réponse
             // ============================================
-            return _mapper.Map<VenteResponseDto>(createdVente);
+            return createdVente.ToResponseDto();
         }
     }
 }

@@ -1,27 +1,24 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Fournisseurs.Dtos;
 using Domain.Entities;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Fournisseurs.Commands.UpdateFournisseur
 {
     public class UpdateFournisseurCommandHandler : IRequestHandler<UpdateFournisseurCommand, FournisseurResponseDto>
     {
         private readonly IFournisseurRepository _fournisseurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<UpdateFournisseurCommandHandler> _logger;
 
         public UpdateFournisseurCommandHandler(
             IFournisseurRepository fournisseurRepository,
-            IMapper mapper,
             ILogger<UpdateFournisseurCommandHandler> logger)
         {
             _fournisseurRepository = fournisseurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -69,7 +66,7 @@ namespace Application.Features.Fournisseurs.Commands.UpdateFournisseur
             _logger.LogInformation("Fournisseur {FournisseurId} mis à jour avec succès", updateDto.Id);
 
             // 4. Retour de la réponse
-            return _mapper.Map<FournisseurResponseDto>(existingFournisseur);
+            return existingFournisseur.ToResponseDto();
         }
     }
 }

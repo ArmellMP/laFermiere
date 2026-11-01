@@ -26,6 +26,44 @@ namespace Infrastructure.Repositories
         // LECTURES
         // ============================================
 
+        public async Task<IEnumerable<SuiviJournalier>> GetByFiltresAsync(
+            int? bandeId,
+            DateTime? dateDebut,
+            DateTime? dateFin,
+            CancellationToken cancellationToken = default)
+        {
+            // Chaque filtre suit le motif "(@Param IS NULL OR condition)" :
+            // si le paramètre vaut NULL, la condition est toujours vraie => filtre ignoré.
+            // Une seule requête couvre ainsi toutes les combinaisons de filtres,
+            // sans construire de SQL dynamique (et sans risque d'injection SQL).
+            const string sql = @"
+                SELECT
+                    sj.*,
+                    b.Code as BandeCode,
+                    s.Nom as StockNom,
+                    s.UniteMesure as StockUniteMesure,
+                    u.Nom as CreateurNom
+                FROM SuivisJournaliers sj
+                LEFT JOIN Bandes b ON sj.BandeId = b.Id
+                LEFT JOIN Stocks s ON sj.StockConsommeId = s.Id
+                LEFT JOIN Utilisateurs u ON sj.CreatedBy = u.Id
+                WHERE (@BandeId IS NULL OR sj.BandeId = @BandeId)
+                  AND (@DateDebut IS NULL OR sj.DateSuivi >= @DateDebut)
+                  AND (@DateFin IS NULL OR sj.DateSuivi <= @DateFin)
+                ORDER BY sj.BandeId ASC, sj.Jour ASC";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+
+            var repSuivis = await connection.QueryAsync<RepSuiviJournalierEntity>(sql, new
+            {
+                BandeId = bandeId,
+                DateDebut = dateDebut,
+                DateFin = dateFin
+            });
+
+            return repSuivis.Select(rep => rep.ToDomain()).ToList();
+        }
+
         public async Task<IEnumerable<SuiviJournalier>> GetByBandeIdAsync(
             int bandeId, 
             CancellationToken cancellationToken = default)

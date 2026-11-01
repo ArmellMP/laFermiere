@@ -1,9 +1,9 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
 using Domain.Enums;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Queries.GetAllClients
 {
@@ -13,16 +13,13 @@ namespace Application.Features.Clients.Queries.GetAllClients
     public class GetAllClientsQueryHandler : IRequestHandler<GetAllClientsQuery, List<ClientResponseDto>>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetAllClientsQueryHandler> _logger;
 
         public GetAllClientsQueryHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<GetAllClientsQueryHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -68,7 +65,7 @@ namespace Application.Features.Clients.Queries.GetAllClients
             // ============================================
             // 2. Mapper et retourner
             // ============================================
-            return _mapper.Map<List<ClientResponseDto>>(clients);
+            return clients.ToResponseDtos();
         }
     }
 }

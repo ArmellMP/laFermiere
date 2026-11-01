@@ -1,9 +1,9 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Queries.GetClientById
 {
@@ -13,16 +13,13 @@ namespace Application.Features.Clients.Queries.GetClientById
     public class GetClientByIdQueryHandler : IRequestHandler<GetClientByIdQuery, ClientResponseDto>
     {
         private readonly IClientRepository _clientRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetClientByIdQueryHandler> _logger;
 
         public GetClientByIdQueryHandler(
             IClientRepository clientRepository,
-            IMapper mapper,
             ILogger<GetClientByIdQueryHandler> logger)
         {
             _clientRepository = clientRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -45,7 +42,7 @@ namespace Application.Features.Clients.Queries.GetClientById
             // ============================================
             // 2. Mapper en DTO
             // ============================================
-            var clientDto = _mapper.Map<ClientResponseDto>(client);
+            var clientDto = client.ToResponseDto();
 
             // ============================================
             // 3. Ajouter les informations de ventes si demandé

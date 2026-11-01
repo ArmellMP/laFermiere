@@ -1,25 +1,22 @@
 using MediatR;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Fournisseurs.Dtos;
+using Application.Common.Mappings;
 
 namespace Application.Features.Fournisseurs.Queries.GetFournisseurById
 {
     public class GetFournisseurByIdQueryHandler : IRequestHandler<GetFournisseurByIdQuery, FournisseurResponseDto>
     {
         private readonly IFournisseurRepository _fournisseurRepository;
-        private readonly IMapper _mapper;
         private readonly ILogger<GetFournisseurByIdQueryHandler> _logger;
 
         public GetFournisseurByIdQueryHandler(
             IFournisseurRepository fournisseurRepository,
-            IMapper mapper,
             ILogger<GetFournisseurByIdQueryHandler> logger)
         {
             _fournisseurRepository = fournisseurRepository;
-            _mapper = mapper;
             _logger = logger;
         }
 
@@ -36,7 +33,7 @@ namespace Application.Features.Fournisseurs.Queries.GetFournisseurById
                 throw new NotFoundException($"Fournisseur avec l'ID {request.Id} non trouvé.");
             }
 
-            var dto = _mapper.Map<FournisseurResponseDto>(fournisseur);
+            var dto = fournisseur.ToResponseDto();
 
             if (request.IncludeAchats)
             {
