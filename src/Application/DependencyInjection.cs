@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;// Pour Assembly.GetExecutingAssembly()
-using FluentValidation; // Pour la validation automatique
+using FluentValidation; // Pour AddValidatorsFromAssembly
+using Application.Common.Behaviors; // Pour ValidationBehavior
 
 namespace Application
 {
@@ -38,36 +39,27 @@ namespace Application
             // - GetBandeByIdQueryHandler
             // - GetBandesByStatutQueryHandler
             // - etc.
-            services.AddMediatR(cfg => 
-                cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-            
+            services.AddMediatR(cfg =>
+            {
+                cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+
+                // PIPELINE BEHAVIOR - VALIDATION AUTOMATIQUE
+                // Chaque Command/Query passe d'abord par ValidationBehavior,
+                // qui exécute ses validateurs FluentValidation avant le Handler.
+                // "Open" = générique : un seul enregistrement couvre tous les types de requêtes.
+                // (D'autres behaviors pourront s'ajouter ici : journalisation, mesure du temps...)
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            });
+
             // ============================================
-            // 2. FLUENTVALIDATION - VALIDATION DES DTOS
+            // 2. FLUENTVALIDATION - ENREGISTREMENT DES VALIDATEURS
             // ============================================
-            
-            // Active la validation automatique des DTOs
-            // Sans ça, les validators ne sont pas appelés automatiquement
+
+            // Enregistre toutes les classes AbstractValidator<T> de l'assembly Application
+            // dans l'injection de dépendances. Attention : cela les rend DISPONIBLES,
+            // mais ne les EXÉCUTE pas. C'est ValidationBehavior (ci-dessus) qui les appelle.
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-            
-            // ============================================
-            // 3. PIPELINE BEHAVIORS - COMPORTEMENTS GLOBAUX
-            // ============================================
-            
-            // Ces behaviors s'exécutent AUTOMATIQUEMENT pour TOUTES les Commands/Queries
-            
-            // 3.1 Validation Pipeline - Valide automatiquement avant le Handler
-            // À DÉCOMMENTER QUAND VOUS AUREZ BESOIN DE VALIDATION AUTOMATIQUE
-            // services.AddTransient(typeof(IPipelineBehavior<,>), 
-            //     typeof(ValidationBehavior<,>));
-            
-            // 3.2 Logging Pipeline - Logge automatiquement les requêtes
-            // services.AddTransient(typeof(IPipelineBehavior<,>), 
-            //     typeof(LoggingBehavior<,>));
-            
-            // 3.3 Performance Pipeline - Mesure le temps d'exécution
-            // services.AddTransient(typeof(IPipelineBehavior<,>), 
-            //     typeof(PerformanceBehavior<,>));
-            
+
             return services;
         }
     }
