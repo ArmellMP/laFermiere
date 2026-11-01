@@ -332,69 +332,85 @@ CREATE INDEX idx_alertes_type ON Alertes(TypeAlerte);
 -- ============================================
 DELIMITER $$
 
--- Trigger : alimente le stock après un achat (version corrigée, migration 001).
--- Seuls Aliment, Medicament, Materiel et Autre entrent en stock ; unités vérifiées.
-CREATE TRIGGER trg_after_achat_insert
-AFTER INSERT ON Achats
-FOR EACH ROW
+-- Stock alimenté par les achats (migration 003) : une procédure commune
+-- applique l'écart de quantité ; les triggers INSERT, UPDATE et DELETE l'appellent.
+-- Règle : le stock ne descend jamais sous zéro (sinon refus SIGNAL 45000).
+
+-- ----------------------------------------------------------------------------
+-- Fonction : quel type de stock un type d'achat alimente-t-il ?
+-- Renvoie NULL si l'achat ne va pas en stock :
+--   - Poussins : ce sont des animaux, comptés dans Bandes.NbPoussinsInit
+--   - Services, Transport : des dépenses, rien à stocker
+-- DETERMINISTIC : même entrée => même sortie (MySQL peut l'optimiser).
+-- NO SQL : la fonction ne lit aucune table.
+-- ----------------------------------------------------------------------------
+CREATE FUNCTION fn_type_stock_achat(p_type_achat VARCHAR(20))
+RETURNS VARCHAR(20)
+DETERMINISTIC
+NO SQL
 BEGIN
-    -- Variables locales (DEFAULT NULL = "pas encore de valeur")
-    DECLARE v_stock_type  VARCHAR(20) DEFAULT NULL;  -- type de stock visé
-    DECLARE v_stock_id    INT         DEFAULT NULL;  -- stock existant trouvé
-    DECLARE v_stock_unite VARCHAR(20) DEFAULT NULL;  -- unité de ce stock
+    RETURN CASE p_type_achat
+        WHEN 'Aliment'    THEN 'Aliment'
+        WHEN 'Medicament' THEN 'Medicament'
+        WHEN 'Materiel'   THEN 'Materiel'
+        WHEN 'Autre'      THEN 'Autre'
+        ELSE NULL
+    END;
+END$$
 
-    -- 1) Quel type de stock cet achat alimente-t-il ?
-    --    NULL signifie : cet achat ne concerne pas le stock.
-    SET v_stock_type =
-        CASE NEW.TypeAchat
-            WHEN 'Aliment'    THEN 'Aliment'
-            WHEN 'Medicament' THEN 'Medicament'
-            WHEN 'Materiel'   THEN 'Materiel'
-            WHEN 'Autre'      THEN 'Autre'
-            ELSE NULL   -- 'Poussins', 'Services', 'Transport'
-        END;
+-- ----------------------------------------------------------------------------
+-- Procédure : applique un écart de quantité au stock alimenté par un achat.
+--   p_bande_id       : bande de l'achat (Stocks est unique par bande + type)
+--   p_type_achat     : type de l'achat ('Aliment', 'Poussins'...)
+--   p_ecart          : > 0 entrée en stock, < 0 sortie, 0 rien à déplacer
+--   p_unite          : unité de l'achat (doit être celle du stock)
+--   p_prix           : prix unitaire de l'achat (retenu seulement si entrée)
+--   p_fournisseur_id : fournisseur de l'achat (retenu seulement si entrée)
+-- ----------------------------------------------------------------------------
+CREATE PROCEDURE sp_ajuster_stock_achat(
+    IN p_bande_id       INT,
+    IN p_type_achat     VARCHAR(20),
+    IN p_ecart          DECIMAL(10,2),
+    IN p_unite          VARCHAR(20),
+    IN p_prix           DECIMAL(10,2),
+    IN p_fournisseur_id INT
+)
+-- Le label "proc" permet de quitter la procédure plus tôt avec LEAVE proc
+proc: BEGIN
+    DECLARE v_stock_type  VARCHAR(20)   DEFAULT NULL;  -- type de stock visé
+    DECLARE v_stock_id    INT           DEFAULT NULL;  -- stock existant trouvé
+    DECLARE v_stock_unite VARCHAR(20)   DEFAULT NULL;  -- unité de ce stock
+    DECLARE v_disponible  DECIMAL(10,2) DEFAULT NULL;  -- quantité actuelle du stock
+    DECLARE v_message     VARCHAR(128)  DEFAULT NULL;  -- message d'erreur (128 car. max)
 
-    -- On ne fait rien si l'achat ne va pas dans le stock
-    IF v_stock_type IS NOT NULL THEN
+    -- 1) Cet achat concerne-t-il le stock ? Sinon, rien à faire.
+    SET v_stock_type = fn_type_stock_achat(p_type_achat);
+    IF v_stock_type IS NULL THEN
+        LEAVE proc;
+    END IF;
 
-        -- 2) L'unité de l'achat doit exister dans Stocks.UniteMesure.
-        --    Unités communes aux deux tables : Kg, L, Unite, Sac, Dose, Paquet.
-        IF NEW.UniteMesure NOT IN ('Kg', 'L', 'Unite', 'Sac', 'Dose', 'Paquet') THEN
-            SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'Unité incompatible avec le stock : utilisez Kg, L, Unite, Sac, Dose ou Paquet pour ce type d''achat';
-        END IF;
+    -- 2) L'unité de l'achat doit exister dans Stocks.UniteMesure.
+    --    Achats accepte aussi 'Heure' et 'Km', que Stocks ne connaît pas.
+    IF p_unite NOT IN ('Kg', 'L', 'Unite', 'Sac', 'Dose', 'Paquet') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Unité incompatible avec le stock : utilisez Kg, L, Unite, Sac, Dose ou Paquet pour ce type d''achat';
+    END IF;
 
-        -- 3) Chercher le stock de ce type pour cette bande.
-        --    (Stocks a une clé unique (BandeId, Type) : au plus un résultat.)
-        --    SET ... = (SELECT ...) renvoie NULL proprement s'il n'y a aucune ligne.
-        SET v_stock_id = (
-            SELECT Id FROM Stocks
-            WHERE BandeId = NEW.BandeId AND Type = v_stock_type
-            LIMIT 1
-        );
+    -- 3) Chercher le stock de ce type pour cette bande (au plus un : clé unique).
+    --    SET ... = (SELECT ...) donne NULL proprement s'il n'y a aucune ligne.
+    SET v_stock_id = (
+        SELECT Id FROM Stocks
+        WHERE BandeId = p_bande_id AND Type = v_stock_type
+        LIMIT 1
+    );
 
-        IF v_stock_id IS NOT NULL THEN
-            -- 4a) Le stock existe : vérifier que l'unité est la même
-            SET v_stock_unite = (SELECT UniteMesure FROM Stocks WHERE Id = v_stock_id);
-
-            IF v_stock_unite <> NEW.UniteMesure THEN
-                SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'L''unité de l''achat est différente de celle du stock existant pour ce type et cette bande';
-            END IF;
-
-            -- Ajouter la quantité achetée et retenir le dernier prix / fournisseur
-            UPDATE Stocks
-            SET QuantiteInitiale = QuantiteInitiale + NEW.Quantite,
-                QuantiteActuelle = QuantiteActuelle + NEW.Quantite,
-                PrixUnitaire     = NEW.PrixUnitaire,
-                FournisseurId    = NEW.FournisseurId,
-                UpdatedAt        = NOW()
-            WHERE Id = v_stock_id;
-        ELSE
-            -- 4b) Pas encore de stock : le créer à partir de l'achat
+    -- 4) Pas de stock : on le crée seulement s'il y a une entrée.
+    --    Une sortie sans stock (stock supprimé à la main) n'a rien à retirer.
+    IF v_stock_id IS NULL THEN
+        IF p_ecart > 0 THEN
             INSERT INTO Stocks (BandeId, Type, Nom, QuantiteInitiale, QuantiteActuelle,
                                 UniteMesure, PrixUnitaire, FournisseurId, CreatedAt, UpdatedAt)
-            VALUES (NEW.BandeId,
+            VALUES (p_bande_id,
                     v_stock_type,
                     CASE v_stock_type
                         WHEN 'Aliment'    THEN 'Aliment acheté'
@@ -402,9 +418,105 @@ BEGIN
                         WHEN 'Materiel'   THEN 'Matériel acheté'
                         ELSE 'Autre produit acheté'
                     END,
-                    NEW.Quantite, NEW.Quantite,
-                    NEW.UniteMesure, NEW.PrixUnitaire, NEW.FournisseurId, NOW(), NOW());
+                    p_ecart, p_ecart,
+                    p_unite, p_prix, p_fournisseur_id, NOW(), NOW());
         END IF;
+        LEAVE proc;
+    END IF;
+
+    -- 5) Le stock existe : additionner des unités différentes fausserait tout
+    --    (500 Kg + 10 Sac n'a pas de sens).
+    SELECT UniteMesure, QuantiteActuelle
+      INTO v_stock_unite, v_disponible
+      FROM Stocks
+     WHERE Id = v_stock_id;
+
+    IF v_stock_unite <> p_unite THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'L''unité de l''achat est différente de celle du stock existant pour ce type et cette bande';
+    END IF;
+
+    -- 6) Rien à déplacer (ex. seule la description de l'achat a changé)
+    IF p_ecart = 0 THEN
+        LEAVE proc;
+    END IF;
+
+    -- 7) RÈGLE MÉTIER : on ne retire pas ce qui a déjà été consommé.
+    --    Ex. stock à 5 Kg, on veut retirer 50 Kg => 45 Kg déjà consommés : refus.
+    IF v_disponible + p_ecart < 0 THEN
+        SET v_message = CONCAT('Stock ', v_stock_type, ' insuffisant : ', v_disponible, ' ', v_stock_unite,
+                               ' restants, ', -p_ecart, ' à retirer (déjà consommé)');
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_message;
+    END IF;
+
+    -- 8) Appliquer l'écart aux deux quantités.
+    --    QuantiteInitiale = total entré en stock, QuantiteActuelle = ce qui reste.
+    --    Les deux bougent ensemble : la consommation (Initiale - Actuelle) ne change pas,
+    --    et la contrainte "Actuelle <= Initiale" reste respectée.
+    --    Prix et fournisseur : seule une ENTRÉE les remplace (dernier achat connu) ;
+    --    une sortie garde ceux du stock.
+    UPDATE Stocks
+       SET QuantiteInitiale = QuantiteInitiale + p_ecart,
+           QuantiteActuelle = QuantiteActuelle + p_ecart,
+           PrixUnitaire     = IF(p_ecart > 0, p_prix, PrixUnitaire),
+           FournisseurId    = IF(p_ecart > 0, p_fournisseur_id, FournisseurId),
+           UpdatedAt        = NOW()
+     WHERE Id = v_stock_id;
+END$$
+
+-- ----------------------------------------------------------------------------
+-- Trigger INSERT : l'achat entre en stock (même comportement que la migration 001)
+-- ----------------------------------------------------------------------------
+CREATE TRIGGER trg_after_achat_insert
+AFTER INSERT ON Achats
+FOR EACH ROW
+BEGIN
+    CALL sp_ajuster_stock_achat(NEW.BandeId, NEW.TypeAchat, NEW.Quantite,
+                                NEW.UniteMesure, NEW.PrixUnitaire, NEW.FournisseurId);
+END$$
+
+-- ----------------------------------------------------------------------------
+-- Trigger DELETE : l'achat supprimé sort du stock
+-- OLD = la ligne telle qu'elle était avant la suppression
+-- ----------------------------------------------------------------------------
+CREATE TRIGGER trg_after_achat_delete
+AFTER DELETE ON Achats
+FOR EACH ROW
+BEGIN
+    CALL sp_ajuster_stock_achat(OLD.BandeId, OLD.TypeAchat, -OLD.Quantite,
+                                OLD.UniteMesure, NULL, NULL);
+END$$
+
+-- ----------------------------------------------------------------------------
+-- Trigger UPDATE : OLD = avant modification, NEW = après
+-- ----------------------------------------------------------------------------
+CREATE TRIGGER trg_after_achat_update
+AFTER UPDATE ON Achats
+FOR EACH ROW
+BEGIN
+    DECLARE v_ancien_stock  VARCHAR(20) DEFAULT NULL;
+    DECLARE v_nouveau_stock VARCHAR(20) DEFAULT NULL;
+
+    SET v_ancien_stock  = fn_type_stock_achat(OLD.TypeAchat);
+    SET v_nouveau_stock = fn_type_stock_achat(NEW.TypeAchat);
+
+    IF v_ancien_stock IS NOT NULL
+       AND v_ancien_stock = v_nouveau_stock
+       AND OLD.BandeId = NEW.BandeId THEN
+        -- Même stock : on applique seulement la différence.
+        -- Retirer l'ancien puis ajouter le nouveau échouerait à tort :
+        -- achat 50 Kg, 45 consommés, corrigé à 60 => retirer 50 d'un stock de 5 = refus,
+        -- alors que le résultat final (+10) est valide.
+        CALL sp_ajuster_stock_achat(NEW.BandeId, NEW.TypeAchat, NEW.Quantite - OLD.Quantite,
+                                    NEW.UniteMesure, NEW.PrixUnitaire, NEW.FournisseurId);
+    ELSE
+        -- Stock différent (type changé, ex. Aliment -> Transport) :
+        -- l'ancien achat sort de son stock, le nouveau entre dans le sien.
+        -- Pour un type hors stock, la procédure ne fait rien.
+        CALL sp_ajuster_stock_achat(OLD.BandeId, OLD.TypeAchat, -OLD.Quantite,
+                                    OLD.UniteMesure, NULL, NULL);
+        CALL sp_ajuster_stock_achat(NEW.BandeId, NEW.TypeAchat, NEW.Quantite,
+                                    NEW.UniteMesure, NEW.PrixUnitaire, NEW.FournisseurId);
     END IF;
 END$$
 
