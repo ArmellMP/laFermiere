@@ -34,10 +34,9 @@ namespace Application.Features.Stocks.Validators
                 .NotEmpty()  // Champ obligatoire
                 .WithMessage("Le nom du produit est requis.")
                 .MaximumLength(100)  // Longueur maximale (comme dans la BDD VARCHAR(100))
-                .WithMessage("Le nom du produit ne peut pas dépasser 100 caractères.")
-                .Matches(@"^[a-zA-Z0-9\s\-éèêëàâäôöùûüç]+$")  // Expression régulière
-                .WithMessage("Le nom contient des caractères non autorisés.");
-            // Matches : vérifie que le texte correspond à un pattern (lettres, chiffres, espaces, tirets, accents)
+                .WithMessage("Le nom du produit ne peut pas dépasser 100 caractères.");
+            // Pas de restriction de caractères (décision 2026-11-01) : un nom comme
+            // "Vaccin (Gumboro)" ou "Aliment 1/2" doit être accepté.
             
             RuleFor(x => x.QuantiteInitiale)
                 .GreaterThan(0)  // Strictement positif

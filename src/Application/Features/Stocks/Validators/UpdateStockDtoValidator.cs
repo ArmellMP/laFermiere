@@ -46,9 +46,10 @@ namespace Application.Features.Stocks.Validators
             
             When(x => x.DatePeremption.HasValue, () =>
             {
+                // Pas d'obligation "dans le futur" en modification (décision 2026-11-01) :
+                // il faut pouvoir corriger ou compléter un stock déjà périmé.
+                // (À la création, CreateStockDtoValidator exige toujours une date future.)
                 RuleFor(x => x.DatePeremption)
-                    .GreaterThan(DateTime.UtcNow)  // Doit être dans le futur
-                    .WithMessage("La date de péremption doit être dans le futur.")
                     .LessThan(DateTime.UtcNow.AddYears(5))
                     .WithMessage("La date de péremption est trop éloignée (max 5 ans).");
             });

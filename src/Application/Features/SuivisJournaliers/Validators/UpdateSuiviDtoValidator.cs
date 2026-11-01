@@ -31,15 +31,17 @@ namespace Application.Features.SuivisJournaliers.Validators
                 RuleFor(x => x.PoidsMoyen)
                     .GreaterThan(0)
                     .WithMessage("Le poids moyen doit être supérieur à 0.")
-                    .LessThan(10000)
-                    .WithMessage("Le poids moyen semble trop élevé.")
+                    .LessThanOrEqualTo(10)   // en kg (décision 2026-11-01)
+                    .WithMessage("Le poids moyen (en kg) ne peut pas dépasser 10 kg.")
                     .PrecisionScale(6, 2, true);
 
                 RuleFor(x => x.NbSujetsPeses)
                     .NotNull()
                     .WithMessage("Le nombre de sujets pesés est requis.")
                     .GreaterThan(0)
-                    .WithMessage("Le nombre de sujets pesés doit être supérieur à 0.");
+                    .WithMessage("Le nombre de sujets pesés doit être supérieur à 0.")
+                    .LessThanOrEqualTo(10000)   // même limite qu'à la création
+                    .WithMessage("Le nombre de sujets pesés ne peut pas dépasser 10000.");
             });
 
             When(x => !string.IsNullOrEmpty(x.TypeSoin), () =>

@@ -83,6 +83,17 @@ namespace Application.Features.Achats.Commands.UpdateAchat
             existingAchat.DateReception = updateDto.DateReception ?? existingAchat.DateReception;
             existingAchat.Observations = updateDto.Observations ?? existingAchat.Observations;
 
+            // La réception ne peut pas précéder l'achat (contrainte SQL chk_date_reception).
+            // Le validateur ne peut pas le vérifier si une seule des deux dates est envoyée :
+            // il ne connaît pas la valeur enregistrée en base. Ici, on a les deux dates
+            // définitives => refus clair (400) au lieu d'une erreur SQL (500).
+            if (existingAchat.DateReception.HasValue && existingAchat.DateReception.Value < existingAchat.DateAchat)
+            {
+                throw new BusinessRuleException(
+                    $"La date de réception ({existingAchat.DateReception.Value:dd/MM/yyyy}) ne peut pas " +
+                    $"précéder la date d'achat ({existingAchat.DateAchat:dd/MM/yyyy}).");
+            }
+
             // 3. Impact sur l'effectif de la bande (achats de poussins uniquement)
             // La création ajoute les poussins à la bande, la suppression les retire.
             // La modification doit donc appliquer la DIFFÉRENCE, sinon le compteur se décale.

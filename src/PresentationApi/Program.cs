@@ -19,6 +19,39 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+    })
+    // Erreurs DataAnnotations ([Required], [Range]...) : [ApiController] les détecte AVANT
+    // d'appeler le contrôleur et renvoie par défaut un "ProblemDetails" d'ASP.NET.
+    // On remplace cette réponse par notre format unique ErrorResponse, identique à celui
+    // des erreurs FluentValidation (ExceptionMiddleware) : un client n'a qu'un format à lire.
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            // ModelState = dictionnaire "champ -> erreurs" rempli par la validation ASP.NET
+            var errors = context.ModelState
+                .Where(entry => entry.Value is { Errors.Count: > 0 })
+                .GroupBy(entry => PresentationApi.Models.Responses.ErrorResponse.NomDeChamp(entry.Key))
+                .ToDictionary(
+                    groupe => groupe.Key,
+                    groupe => groupe
+                        .SelectMany(entry => entry.Value!.Errors)
+                        // Message vide = erreur de lecture du JSON (type incorrect...) : on l'explique
+                        .Select(error => string.IsNullOrEmpty(error.ErrorMessage)
+                            ? "Valeur invalide."
+                            : error.ErrorMessage)
+                        .Distinct()
+                        .ToArray());
+
+            var response = new PresentationApi.Models.Responses.ErrorResponse
+            {
+                Message = PresentationApi.Models.Responses.ErrorResponse.MessageValidation,
+                Errors = errors,
+                TraceId = context.HttpContext.TraceIdentifier
+            };
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(response);
+        };
     });
 
 // Documentation OpenAPI : générateur intégré à .NET 10 (remplace AddSwaggerGen,

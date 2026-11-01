@@ -1,4 +1,5 @@
 ﻿// PresentationApi/Controllers/AchatsController.cs
+using Application.Common.Exceptions;
 using PresentationApi.Security;
 using Microsoft.AspNetCore.Authorization;
 using MediatR;
@@ -151,7 +152,8 @@ namespace PresentationApi.Controllers
         {
             if (id != request.Id)
             {
-                return BadRequest("L'ID dans l'URL ne correspond pas à l'ID dans la requête.");
+                // Exception plutôt que BadRequest("texte") : ExceptionMiddleware renvoie le format commun ErrorResponse (400)
+                throw new BusinessRuleException("L'ID dans l'URL ne correspond pas à l'ID dans la requête.");
             }
 
             _logger.LogInformation("Mise à jour de l'achat {AchatId}", id);
