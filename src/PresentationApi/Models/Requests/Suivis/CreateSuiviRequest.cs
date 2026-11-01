@@ -24,7 +24,7 @@ namespace PresentationApi.Models.Requests.Suivis
         [Range(0.01, 10, ErrorMessage = "Le poids moyen doit être entre 0.01 et 10 kg")]
         public decimal? PoidsMoyen { get; set; }
 
-        [Range(1, 1000, ErrorMessage = "Le nombre de sujets pesés doit être entre 1 et 1000")]
+        [Range(1, 10000, ErrorMessage = "Le nombre de sujets pesés doit être entre 1 et 10 000")]
         public int? NbSujetsPeses { get; set; }
 
         [RegularExpression("^(Vaccination|Traitement|Prevention|Supplement|Autre)$", 

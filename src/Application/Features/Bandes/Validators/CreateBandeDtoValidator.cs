@@ -20,8 +20,8 @@ namespace Application.Features.Bandes.Validators
             RuleFor(x => x.NbPoussinsInit)
                 .GreaterThan(0)
                 .WithMessage("Le nombre initial de poussins doit être supérieur à 0")
-                .LessThanOrEqualTo(10000)
-                .WithMessage("Le nombre initial de poussins ne peut pas dépasser 10 000");
+                .LessThanOrEqualTo(50000)   // décision 2026-11-01 : 50 000 (même limite que CreateBandeRequest)
+                .WithMessage("Le nombre initial de poussins ne peut pas dépasser 50 000");
             
             RuleFor(x => x.Observations)
                 .MaximumLength(2000)

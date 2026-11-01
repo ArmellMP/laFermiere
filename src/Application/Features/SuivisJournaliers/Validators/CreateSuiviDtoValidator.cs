@@ -42,8 +42,8 @@ namespace Application.Features.SuivisJournaliers.Validators
                 RuleFor(x => x.PoidsMoyen)
                     .GreaterThan(0)
                     .WithMessage("Le poids moyen doit être supérieur à 0.")
-                    .LessThan(10000)
-                    .WithMessage("Le poids moyen semble trop élevé (max 10kg).")
+                    .LessThanOrEqualTo(10)   // en kg (décision 2026-11-01) : un poulet de chair pèse moins de 10 kg
+                    .WithMessage("Le poids moyen (en kg) ne peut pas dépasser 10 kg.")
                     .PrecisionScale(6, 2, true)
                     .WithMessage("Le poids moyen ne peut pas avoir plus de 2 décimales.");
 
