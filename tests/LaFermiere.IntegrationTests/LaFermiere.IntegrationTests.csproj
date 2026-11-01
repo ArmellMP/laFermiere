@@ -8,6 +8,11 @@
     <OutputType>Exe</OutputType>
     <!-- Projet de tests : jamais publié comme paquet NuGet -->
     <IsPackable>false</IsPackable>
+    <!-- xUnit1051 : l'analyseur xUnit conseille de passer TestContext.Current.CancellationToken
+         à chaque appel HTTP, pour pouvoir interrompre un test plus vite. Nos tests durent
+         chacun moins d'une seconde : ce gain ne vaut pas d'alourdir chaque ligne. Règle
+         désactivée volontairement, pour ce projet uniquement. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
