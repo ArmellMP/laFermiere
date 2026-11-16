@@ -44,7 +44,7 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
                 var emailExists = await _utilisateurRepository.EmailExistsAsync(updateDto.Email, updateDto.Id, cancellationToken);
                 if (emailExists)
                 {
-                    throw new BusinessRuleException($"Un utilisateur avec l'email '{updateDto.Email}' existe déjà.");
+                    throw new ConflictException($"Un utilisateur avec l'email '{updateDto.Email}' existe déjà.");
                 }
                 existingUtilisateur.Email = updateDto.Email;
             }

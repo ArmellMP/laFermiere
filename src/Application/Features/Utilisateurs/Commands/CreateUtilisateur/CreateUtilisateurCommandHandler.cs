@@ -39,7 +39,7 @@ namespace Application.Features.Utilisateurs.Commands.CreateUtilisateur
             var emailExists = await _utilisateurRepository.EmailExistsAsync(createDto.Email, null, cancellationToken);
             if (emailExists)
             {
-                throw new BusinessRuleException($"Un utilisateur avec l'email '{createDto.Email}' existe déjà.");
+                throw new ConflictException($"Un utilisateur avec l'email '{createDto.Email}' existe déjà.");
             }
 
             // ============================================
