@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Enums;
 using PresentationApi.Models.Requests.Bandes;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Bandes.Queries.GetAllBandes;
 using Application.Features.Bandes.Queries.GetBandeById;
@@ -43,8 +44,9 @@ namespace PresentationApi.Controllers
         /// <param name="includeDetails">Inclure les détails (mortalités, jours, etc.)</param>
         /// <returns>Liste des bandes</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(List<BandeResponse>), 200)]
-        public async Task<IActionResult> GetAll([FromQuery] bool includeDetails = false)
+        [ProducesResponseType(typeof(PageResponse<BandeResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        public async Task<IActionResult> GetAll([FromQuery] PaginationRequest pagination, [FromQuery] bool includeDetails = false)
         {
             _logger.LogInformation("Récupération de toutes les bandes (IncludeDetails: {IncludeDetails})", includeDetails);
             
@@ -52,7 +54,7 @@ namespace PresentationApi.Controllers
             var result = await _mediator.Send(query);
             
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         /// <summary>

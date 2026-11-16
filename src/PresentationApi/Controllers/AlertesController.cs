@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Alertes;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Alertes.Queries.GetAllAlertes;
 using Application.Features.Alertes.Queries.GetAlerteById;
@@ -37,8 +38,10 @@ namespace PresentationApi.Controllers
         // ============================================
 
         [HttpGet]
-        [ProducesResponseType(typeof(List<AlerteResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<AlerteResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] string? typeAlerte = null,
             [FromQuery] string? niveau = null,
             [FromQuery] bool? onlyNonLues = null,
@@ -60,7 +63,7 @@ namespace PresentationApi.Controllers
 
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         [HttpGet("non-lues")]

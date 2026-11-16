@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Achats;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Achats.Queries.GetAllAchats;
 using Application.Features.Achats.Queries.GetAchatById;
@@ -39,8 +40,10 @@ namespace PresentationApi.Controllers
         // ============================================
 
         [HttpGet]
-        [ProducesResponseType(typeof(List<AchatResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<AchatResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] int? bandeId = null,
             [FromQuery] int? fournisseurId = null,
             [FromQuery] string? typeAchat = null,
@@ -62,7 +65,7 @@ namespace PresentationApi.Controllers
 
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         [HttpGet("{id}")]
