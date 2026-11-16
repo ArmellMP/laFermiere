@@ -33,6 +33,11 @@ namespace LaFermiere.IntegrationTests.Infrastructure
             // 1. Base propre
             await BaseDeTest.RecreerAsync();
 
+            // Pas de limite de tentatives de connexion pour l'API partagée : tous les tests
+            // se connectent depuis la même "adresse" et atteindraient vite la limite.
+            // LimitationConnexionTests vérifie la limite sur une API dédiée.
+            Environment.SetEnvironmentVariable("LimitationConnexion__TentativesMax", "0");
+
             // 2. Configuration de l'API pendant les tests, par variables d'environnement.
             //    Dans ASP.NET Core, les variables d'environnement sont lues APRÈS appsettings.json
             //    et les user-secrets : elles ont donc la priorité.
@@ -46,6 +51,7 @@ namespace LaFermiere.IntegrationTests.Infrastructure
 
         public async ValueTask DisposeAsync()
         {
+            Environment.SetEnvironmentVariable("LimitationConnexion__TentativesMax", null);
             if (_factory != null)
             {
                 await _factory.DisposeAsync();

@@ -122,6 +122,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Limitation des tentatives de connexion (10 par minute et par IP par défaut) : voir LimitationConnexionExtensions
+builder.Services.AddLimitationConnexion(builder.Configuration);
+
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 var app = builder.Build();
@@ -275,6 +278,7 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();   // applique [EnableRateLimiting] (limite sur /authenticate)
 
 // Tous les contrôleurs exigent un utilisateur authentifié (jeton JWT valide).
 // Exception : les actions marquées [AllowAnonymous], comme /authenticate.

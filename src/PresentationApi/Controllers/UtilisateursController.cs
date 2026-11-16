@@ -12,6 +12,8 @@ using Application.Features.Utilisateurs.Commands.CreateUtilisateur;
 using Application.Features.Utilisateurs.Commands.UpdateUtilisateur;
 using Application.Features.Utilisateurs.Commands.DeleteUtilisateur;
 using PresentationApi.Mappings;
+using PresentationApi.Extensions;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace PresentationApi.Controllers
 {
@@ -71,8 +73,10 @@ namespace PresentationApi.Controllers
 
         [HttpPost("authenticate")]
         [AllowAnonymous]
+        [EnableRateLimiting(LimitationConnexionExtensions.PolitiqueConnexion)]   // 10 essais/min par IP par défaut
         [ProducesResponseType(typeof(AuthResponse), 200)]
         [ProducesResponseType(401)]
+        [ProducesResponseType(typeof(ErrorResponse), 429)]
         public async Task<IActionResult> Authenticate([FromBody] AuthenticateRequest request)
         {
             _logger.LogInformation("Tentative d'authentification pour {Email}", request.Email);
