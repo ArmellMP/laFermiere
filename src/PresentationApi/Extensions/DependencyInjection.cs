@@ -24,7 +24,10 @@ namespace PresentationApi.Extensions
             services.AddHttpClient();
             services.AddMemoryCache();
             services.AddHealthChecks();
-            
+
+            // ✅ 4. Tâche de fond : génération périodique des alertes métier
+            services.AddHostedService<PresentationApi.Services.GenerationAlertesBackgroundService>();
+
             return services;
         }
     }

@@ -339,33 +339,5 @@ namespace Infrastructure.Repositories
             var count = await connection.ExecuteScalarAsync<int>(sql, new { Id = id });
             return count > 0;
         }
-
-        // ============================================
-        // GÉNÉRATION D'ALERTES MÉTIER (à implémenter avec les autres repositories)
-        // ============================================
-
-        public async Task CheckAndCreateStockFaibleAlertesAsync(CancellationToken cancellationToken = default)
-        {
-            // TODO: À implémenter avec IStockRepository
-            // Vérifier les stocks en dessous du seuil d'alerte
-            // Créer des alertes pour chaque stock faible
-            await Task.CompletedTask;
-        }
-
-        public async Task CheckAndCreatePeremptionAlertesAsync(CancellationToken cancellationToken = default)
-        {
-            // TODO: À implémenter avec IStockRepository
-            // Vérifier les stocks proches de la péremption
-            // Créer des alertes pour chaque produit bientôt périmé
-            await Task.CompletedTask;
-        }
-
-        public async Task CheckAndCreateBandeACloturerAlertesAsync(CancellationToken cancellationToken = default)
-        {
-            // TODO: À implémenter avec IBandeRepository
-            // Vérifier les bandes proches de la fin du cycle
-            // Créer des alertes pour chaque bande à clôturer
-            await Task.CompletedTask;
-        }
     }
 }

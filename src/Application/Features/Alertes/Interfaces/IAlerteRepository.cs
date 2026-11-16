@@ -137,24 +137,5 @@ namespace Application.Features.Alertes.Interfaces
         /// Supprime les alertes plus anciennes qu'une certaine date
         /// </summary>
         Task DeleteOldAsync(DateTime dateLimite, CancellationToken cancellationToken = default);
-        
-        // ============================================
-        // GÉNÉRATION D'ALERTES MÉTIER
-        // ============================================
-        
-        /// <summary>
-        /// Vérifie et crée des alertes pour les stocks faibles
-        /// </summary>
-        Task CheckAndCreateStockFaibleAlertesAsync(CancellationToken cancellationToken = default);
-        
-        /// <summary>
-        /// Vérifie et crée des alertes pour les produits proches de la péremption
-        /// </summary>
-        Task CheckAndCreatePeremptionAlertesAsync(CancellationToken cancellationToken = default);
-        
-        /// <summary>
-        /// Vérifie et crée des alertes pour les bandes à clôturer
-        /// </summary>
-        Task CheckAndCreateBandeACloturerAlertesAsync(CancellationToken cancellationToken = default);
     }
 }
