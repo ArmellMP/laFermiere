@@ -289,3 +289,9 @@ app.MapGet("/", () => Results.Json(new
 }));
 
 app.Run();
+
+// Avec les "top-level statements" (code écrit directement dans Program.cs, sans Main),
+// le compilateur génère une classe Program INTERNE au projet. Cette déclaration la rend
+// publique, pour que les tests d'intégration puissent démarrer l'API en mémoire avec
+// WebApplicationFactory<Program> (tests/LaFermiere.IntegrationTests).
+public partial class Program { }

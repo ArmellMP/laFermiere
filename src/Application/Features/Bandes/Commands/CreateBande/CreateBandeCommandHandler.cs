@@ -78,9 +78,7 @@ namespace Application.Features.Bandes.Commands.CreateBande
         /// <summary>
         /// Génère un code si non fourni.
         /// </summary>
-        private async Task<string> GenerateCodeIfNeededAsync(
-            CreateBandeDto dto,
-            CancellationToken cancellationToken)
+        private async Task<string> GenerateCodeIfNeededAsync(CreateBandeDto dto, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(dto.Code))
                 return dto.Code;
@@ -90,18 +88,29 @@ namespace Application.Features.Bandes.Commands.CreateBande
 
         /// <summary>
         /// Génère un code unique pour une bande.
-        /// Format : ANNEE-MOIS-JOUR-NUM (ex: 2024-01-08-001, puis 2024-01-08-002
-        /// pour une deuxième bande arrivée le même jour).
-        /// La contrainte UNIQUE sur Bandes.Code reste le garde-fou final si deux
-        /// créations simultanées obtenaient le même numéro.
+        /// Format : ANNEE-MOIS-JOUR-NUM (ex: 2024-01-08-001)
+        ///
+        /// NUM = premier numéro libre pour cette date : 001, sinon 002, etc.
+        /// (Avant : toujours "001". Deux bandes arrivées le même jour avaient le même code,
+        ///  et la contrainte UNIQUE de la colonne Code provoquait une erreur 500.
+        ///  Bug trouvé par le test d'intégration DeuxBandesSansCodeLeMemeJour_CodesDifferents.)
         /// </summary>
-        private async Task<string> GenerateBandeCodeAsync(
-            DateTime dateArrivee,
-            CancellationToken cancellationToken)
+        private async Task<string> GenerateBandeCodeAsync(DateTime dateArrivee, CancellationToken cancellationToken)
         {
-            var numero = await _bandeRepository.GetProchainNumeroCodeAsync(dateArrivee, cancellationToken);
+            var datePart = dateArrivee.ToString("yyyy-MM-dd");
 
-            return $"{dateArrivee:yyyy-MM-dd}-{numero:D3}";
+            // 999 bandes le même jour : largement au-delà d'un élevage réel
+            for (var numero = 1; numero <= 999; numero++)
+            {
+                var code = $"{datePart}-{numero:000}";   // :000 = sur 3 chiffres (1 -> "001")
+                if (!await _bandeRepository.CodeExistsAsync(code, cancellationToken))
+                {
+                    return code;
+                }
+            }
+
+            throw new BusinessRuleException(
+                $"Plus aucun code automatique disponible pour le {dateArrivee:dd/MM/yyyy}. Indiquez un code manuellement.");
         }
     }
 }
