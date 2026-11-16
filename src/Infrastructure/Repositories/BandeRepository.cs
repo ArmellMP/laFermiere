@@ -136,6 +136,34 @@ namespace Infrastructure.Repositories.BandeRepository
             return count > 0;
         }
 
+        public async Task<int> GetProchainNumeroCodeAsync(DateTime dateArrivee, CancellationToken cancellationToken = default)
+        {
+            // Codes du jour au format "AAAA-MM-JJ-NNN" : le numéro commence au 12e caractère
+            // (10 pour la date + 1 pour le tiret). Les codes saisis à la main qui ne suivent
+            // pas ce format sont ignorés par le REGEXP.
+            const string sql = @"
+                SELECT COALESCE(MAX(CAST(SUBSTRING(Code, 12) AS UNSIGNED)), 0) + 1
+                FROM Bandes
+                WHERE Code REGEXP CONCAT('^', @Prefixe, '-[0-9]+$')";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+            return await connection.ExecuteScalarAsync<int>(
+                sql, new { Prefixe = dateArrivee.ToString("yyyy-MM-dd") });
+        }
+
+        public async Task<BandeDonneesLieesDto> GetDonneesLieesAsync(int bandeId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+                SELECT
+                    (SELECT COUNT(*) FROM SuivisJournaliers WHERE BandeId = @BandeId) AS NbSuivis,
+                    (SELECT COUNT(*) FROM Stocks            WHERE BandeId = @BandeId) AS NbStocks,
+                    (SELECT COUNT(*) FROM Ventes            WHERE BandeId = @BandeId) AS NbVentes,
+                    (SELECT COUNT(*) FROM Achats            WHERE BandeId = @BandeId) AS NbAchats";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+            return await connection.QuerySingleAsync<BandeDonneesLieesDto>(sql, new { BandeId = bandeId });
+        }
+
         public async Task<BandeStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
         {
             const string sql = @"

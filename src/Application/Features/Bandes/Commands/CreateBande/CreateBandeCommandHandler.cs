@@ -34,7 +34,7 @@ namespace Application.Features.Bandes.Commands.CreateBande
             // 2. Créer l'entité Domain (plus de AutoMapper ici pour plus de contrôle)
             var bande = new Bande
             {
-                Code = GenerateCodeIfNeeded(createDto),
+                Code = await GenerateCodeIfNeededAsync(createDto, cancellationToken),
                 DateArrivee = createDto.DateArrivee,
                 NbPoussinsInit = createDto.NbPoussinsInit,
                 NbPoussinsActuel = createDto.NbPoussinsInit, // Au départ = initial
@@ -78,25 +78,30 @@ namespace Application.Features.Bandes.Commands.CreateBande
         /// <summary>
         /// Génère un code si non fourni.
         /// </summary>
-        private string GenerateCodeIfNeeded(CreateBandeDto dto)
+        private async Task<string> GenerateCodeIfNeededAsync(
+            CreateBandeDto dto,
+            CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(dto.Code))
                 return dto.Code;
-                
-            return GenerateBandeCode(dto.DateArrivee);
+
+            return await GenerateBandeCodeAsync(dto.DateArrivee, cancellationToken);
         }
-        
+
         /// <summary>
         /// Génère un code unique pour une bande.
-        /// Format : ANNEE-MOIS-JOUR-NUM (ex: 2024-01-08-001)
+        /// Format : ANNEE-MOIS-JOUR-NUM (ex: 2024-01-08-001, puis 2024-01-08-002
+        /// pour une deuxième bande arrivée le même jour).
+        /// La contrainte UNIQUE sur Bandes.Code reste le garde-fou final si deux
+        /// créations simultanées obtenaient le même numéro.
         /// </summary>
-        private string GenerateBandeCode(DateTime dateArrivee)
+        private async Task<string> GenerateBandeCodeAsync(
+            DateTime dateArrivee,
+            CancellationToken cancellationToken)
         {
-            // TODO: Améliorer avec une vraie séquence depuis la base de données
-            var datePart = dateArrivee.ToString("yyyy-MM-dd");
-            var sequenceNumber = "001"; // À remplacer par une vraie logique
-            
-            return $"{datePart}-{sequenceNumber}";
+            var numero = await _bandeRepository.GetProchainNumeroCodeAsync(dateArrivee, cancellationToken);
+
+            return $"{dateArrivee:yyyy-MM-dd}-{numero:D3}";
         }
     }
 }
