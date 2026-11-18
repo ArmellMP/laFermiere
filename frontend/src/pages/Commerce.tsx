@@ -2,16 +2,28 @@
 // Même structure partout : en-tête, indicateurs, filtres, tableau triable.
 import { useMemo, useState } from 'react'
 import { api } from '../api/client'
+import { useAuth } from '../auth/AuthContext'
+import { useNotifier } from '../components/Formulaire'
+import { FormulaireAchat, FormulaireClient, FormulaireFournisseur, FormulaireVente } from '../formulaires/Formulaires'
 import { avecNomsAchats, avecNomsVentes } from '../api/noms'
 import type { Achat, Client, Fournisseur, Vente } from '../api/types'
 import { colonnesAchat, colonnesVente } from '../colonnes'
 import { EtatChargement, useDonnees } from '../components/Chargement'
-import { IconeAlerte, IconeCamion, IconePanier, IconePersonnes, IconeRecherche, IconeVente } from '../components/Icones'
+import { IconeAlerte, IconeCamion, IconePanier, IconePersonnes, IconePlus, IconeRecherche, IconeVente } from '../components/Icones'
 import { Badge, BarreOutils, EnTetePage, Indicateurs, Puces, Recherche, Vide, useEtatUrl } from '../components/Page'
 import { Tableau, type Colonne } from '../components/Tableau'
 import { aujourdhui, monnaie, monnaieCompacte, nombre, normaliser } from '../outils'
 
 const moisCourant = () => aujourdhui().slice(0, 7)
+
+/** Bouton d'action principal de l'en-tête (« Nouvelle vente »…) */
+function BoutonNouveau({ libelle, onClick }: { libelle: string; onClick: () => void }) {
+  return (
+    <button className="bouton-principal" onClick={onClick}>
+      <IconePlus taille={20} /> {libelle}
+    </button>
+  )
+}
 const nomMois = () => new Date().toLocaleDateString('fr-FR', { month: 'long' })
 
 // ---------------------------------------------------------------------------
@@ -20,6 +32,9 @@ const nomMois = () => new Date().toLocaleDateString('fr-FR', { month: 'long' })
 export function Ventes() {
   const [paiement, setPaiement] = useEtatUrl<'toutes' | 'payees' | 'a-encaisser'>('paiement', 'toutes')
   const [recherche, setRecherche] = useState('')
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'vente'>('formulaire', '')
+  const { aLeRole } = useAuth()
+  const notifier = useNotifier()
   const { donnees, erreur, enCours, recharger } = useDonnees(async () => avecNomsVentes(await api.liste<Vente>('/Ventes')), [])
   const ventes = useMemo(() => donnees ?? [], [donnees])
 
@@ -37,7 +52,18 @@ export function Ventes() {
 
   return (
     <main className="page">
-      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Ventes' }]} titre="Ventes" sousTitre="Poulets vivants, nettoyés, fumés et fientes vendus." />
+      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Ventes' }]} titre="Ventes" sousTitre="Poulets vivants, nettoyés, fumés et fientes vendus."
+        actions={aLeRole(...(['Admin', 'Comptable'] as const)) && <BoutonNouveau libelle="Nouvelle vente" onClick={() => setFormulaire('vente')} />}
+      />
+      <FormulaireVente
+        ouvert={formulaire === 'vente'}
+        onFermer={() => setFormulaire('')}
+        onCree={(x) => {
+          setFormulaire('')
+          notifier(((v) => `Vente de ${monnaie(v.montantTotal)} enregistrée`)(x))
+          void recharger()
+        }}
+      />
       <Indicateurs
         elements={[
           { libelle: 'Chiffre d’affaires', valeur: total, format: monnaieCompacte, icone: <IconeVente taille={20} />, ton: 'vert', detail: `${ventes.length} vente${ventes.length > 1 ? 's' : ''}` },
@@ -93,6 +119,9 @@ export function Ventes() {
 export function Achats() {
   const [reception, setReception] = useEtatUrl<'tous' | 'recus' | 'attente'>('reception', 'tous')
   const [recherche, setRecherche] = useState('')
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'achat'>('formulaire', '')
+  const { aLeRole } = useAuth()
+  const notifier = useNotifier()
   const { donnees, erreur, enCours, recharger } = useDonnees(async () => avecNomsAchats(await api.liste<Achat>('/Achats')), [])
   const achats = useMemo(() => donnees ?? [], [donnees])
 
@@ -109,7 +138,18 @@ export function Achats() {
 
   return (
     <main className="page">
-      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Achats' }]} titre="Achats" sousTitre="Poussins, aliment, médicaments, matériel et services." />
+      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Achats' }]} titre="Achats" sousTitre="Poussins, aliment, médicaments, matériel et services."
+        actions={aLeRole(...(['Admin', 'Comptable'] as const)) && <BoutonNouveau libelle="Nouvel achat" onClick={() => setFormulaire('achat')} />}
+      />
+      <FormulaireAchat
+        ouvert={formulaire === 'achat'}
+        onFermer={() => setFormulaire('')}
+        onCree={(x) => {
+          setFormulaire('')
+          notifier(((a) => `Achat de ${monnaie(a.montantTotal)} enregistré`)(x))
+          void recharger()
+        }}
+      />
       <Indicateurs
         elements={[
           { libelle: 'Total des achats', valeur: total, format: monnaieCompacte, icone: <IconePanier taille={20} />, ton: 'terre', detail: `${achats.length} achat${achats.length > 1 ? 's' : ''}` },
@@ -172,6 +212,9 @@ function Contact({ telephone, email }: { telephone?: string | null; email?: stri
 export function Clients() {
   const [type, setType] = useEtatUrl<string>('type', 'tous')
   const [recherche, setRecherche] = useState('')
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'client'>('formulaire', '')
+  const { aLeRole } = useAuth()
+  const notifier = useNotifier()
   const { donnees, erreur, enCours, recharger } = useDonnees(() => api.liste<Client>('/Clients'), [])
   const clients = useMemo(() => donnees ?? [], [donnees])
   const types = [...new Map(clients.map((c) => [c.typeClient, c.typeClientLibelle])).entries()]
@@ -191,7 +234,18 @@ export function Clients() {
 
   return (
     <main className="page">
-      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Clients' }]} titre="Clients" sousTitre="Particuliers, restaurants, marchés et grossistes." />
+      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Clients' }]} titre="Clients" sousTitre="Particuliers, restaurants, marchés et grossistes."
+        actions={aLeRole(...(['Admin', 'Comptable'] as const)) && <BoutonNouveau libelle="Nouveau client" onClick={() => setFormulaire('client')} />}
+      />
+      <FormulaireClient
+        ouvert={formulaire === 'client'}
+        onFermer={() => setFormulaire('')}
+        onCree={(x) => {
+          setFormulaire('')
+          notifier(((c) => `Client ${c.nom} ajouté`)(x))
+          void recharger()
+        }}
+      />
       <Indicateurs
         elements={[
           { libelle: 'Clients', valeur: clients.length, icone: <IconePersonnes taille={20} />, ton: 'ciel', detail: `${clients.filter((c) => c.estActif).length} actifs` },
@@ -235,6 +289,9 @@ export function Clients() {
 export function Fournisseurs() {
   const [type, setType] = useEtatUrl<string>('type', 'tous')
   const [recherche, setRecherche] = useState('')
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'fournisseur'>('formulaire', '')
+  const { aLeRole } = useAuth()
+  const notifier = useNotifier()
   const { donnees, erreur, enCours, recharger } = useDonnees(() => api.liste<Fournisseur>('/Fournisseurs'), [])
   const fournisseurs = useMemo(() => donnees ?? [], [donnees])
   const types = [...new Map(fournisseurs.map((f) => [f.typeFournisseur, f.typeFournisseurLibelle])).entries()]
@@ -254,7 +311,18 @@ export function Fournisseurs() {
 
   return (
     <main className="page">
-      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Fournisseurs' }]} titre="Fournisseurs" sousTitre="Poussinières, fabricants d’aliment, vétérinaires et transporteurs." />
+      <EnTetePage miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Commerce' }, { libelle: 'Fournisseurs' }]} titre="Fournisseurs" sousTitre="Poussinières, fabricants d’aliment, vétérinaires et transporteurs."
+        actions={aLeRole(...(['Admin', 'Comptable'] as const)) && <BoutonNouveau libelle="Nouveau fournisseur" onClick={() => setFormulaire('fournisseur')} />}
+      />
+      <FormulaireFournisseur
+        ouvert={formulaire === 'fournisseur'}
+        onFermer={() => setFormulaire('')}
+        onCree={(x) => {
+          setFormulaire('')
+          notifier(((f) => `Fournisseur ${f.nom} ajouté`)(x))
+          void recharger()
+        }}
+      />
       <Indicateurs
         elements={[
           { libelle: 'Fournisseurs', valeur: fournisseurs.length, icone: <IconeCamion taille={20} />, ton: 'terre', detail: `${fournisseurs.filter((f) => f.estActif).length} actifs` },

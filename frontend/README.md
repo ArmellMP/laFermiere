@@ -3,16 +3,36 @@
 Application **pour téléphone d'abord** : les fermiers saisissent le suivi journalier au poulailler.
 React 19 + Vite + TypeScript. Elle appelle l'API .NET de `src/PresentationApi`.
 
-## Écrans (version test)
+## Arborescence
 
-| Écran | Rôle |
-|---|---|
-| Connexion | e-mail + mot de passe ; la session reste ouverte (refresh token, 7 jours) |
-| Mes bandes | bandes en cours : jour d'élevage / 45, sujets restants, mortalité |
-| Détail d'une bande | chiffres clés + historique des suivis |
-| Suivi du jour | date, mortalités (boutons − / +), pesée, soin, température, observations |
+```
+Tableau de bord
+ÉLEVAGE    Bandes ──► Fiche bande (Aperçu · Journal · Stocks · Ventes · Achats) ──► Suivi du jour
+           Stocks
+COMMERCE   Ventes · Achats · Clients · Fournisseurs
+SUIVI      Alertes
+```
 
-Les comptes Comptable voient les bandes mais ne saisissent pas de suivi (même règle que l'API).
+Chaque écran suit la même structure : fil d’Ariane, en-tête et actions, indicateurs,
+barre d’outils (filtres avec compteurs, recherche, tri, vue), contenu.
+Un module n’est proposé que si l’API autorise le rôle connecté à en lire les données
+(une seule définition : `src/navigation.tsx`).
+
+## Saisies possibles
+
+| Action | Où | Rôles |
+|---|---|---|
+| Nouvelle bande | Bandes | Admin, Fermier |
+| Démarrer l’élevage / Clôturer | Fiche bande | Admin, Fermier |
+| Suivi du jour (mortalités, pesée, soin) | Fiche bande | Admin, Fermier, Vétérinaire |
+| Nouvelle vente | Ventes, onglet Ventes d’une bande | Admin, Comptable |
+| Nouvel achat | Achats, onglet Achats d’une bande | Admin, Comptable |
+| Nouveau client / fournisseur | Clients / Fournisseurs | Admin, Comptable |
+| Marquer une alerte comme lue | Alertes | tous |
+
+Les formulaires s’ouvrent dans un panneau (du bas sur téléphone, de la droite sur ordinateur),
+reprennent les règles de l’API (valeurs autorisées, unités compatibles, effectif disponible)
+et affichent les erreurs champ par champ.
 
 ## Lancer en local
 

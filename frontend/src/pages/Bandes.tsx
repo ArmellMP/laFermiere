@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { useAuth } from '../auth/AuthContext'
+import { FormulaireBande } from '../formulaires/Formulaires'
 import type { Bande, StatutBande } from '../api/types'
 import { Anneau } from '../components/Anime'
 import { EtatChargement, useDonnees } from '../components/Chargement'
-import { IconeChevron, IconeCoeur, IconeHorloge, IconePoussin, IconeRecherche } from '../components/Icones'
+import { IconeChevron, IconeCoeur, IconeHorloge, IconePlus, IconePoussin, IconeRecherche } from '../components/Icones'
 import {
   Badge,
   BarreOutils,
@@ -49,6 +51,9 @@ export default function Bandes() {
   const [tri, setTri] = useEtatUrl<Tri>('tri', 'recentes')
   const [vue, setVue] = useEtatUrl<Vue>('vue', 'cartes')
   const [recherche, setRecherche] = useState('')
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'bande'>('formulaire', '')
+  const { aLeRole } = useAuth()
+  const naviguer = useNavigate()
 
   const { donnees, erreur, enCours, recharger } = useDonnees(() => api.liste<Bande>('/Bandes'), [])
   const toutes = useMemo(() => donnees ?? [], [donnees])
@@ -136,6 +141,19 @@ export default function Bandes() {
         miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Élevage' }, { libelle: 'Bandes' }]}
         titre="Bandes"
         sousTitre="Tous vos lots de poulets, du jour d’arrivée à la clôture."
+        actions={
+          aLeRole('Admin', 'Fermier') && (
+            <button className="bouton-principal" onClick={() => setFormulaire('bande')}>
+              <IconePlus taille={20} /> Nouvelle bande
+            </button>
+          )
+        }
+      />
+
+      <FormulaireBande
+        ouvert={formulaire === 'bande'}
+        onFermer={() => setFormulaire('')}
+        onCree={(b) => naviguer(`/bandes/${b.id}`, { state: { message: `Bande ${b.code} créée !` } })}
       />
 
       <Indicateurs

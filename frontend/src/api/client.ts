@@ -126,5 +126,6 @@ export async function listeComplete<T>(chemin: string): Promise<T[]> {
 export const api = {
   get: <T>(chemin: string) => requete<T>(chemin),
   post: <T>(chemin: string, corps: unknown) => requete<T>(chemin, { method: 'POST', body: JSON.stringify(corps) }),
+  put: <T>(chemin: string, corps: unknown) => requete<T>(chemin, { method: 'PUT', body: JSON.stringify(corps) }),
   liste: listeComplete,
 }

@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { avecNomsAchats, avecNomsVentes } from '../api/noms'
 import type { Achat, Bande, Stock, Suivi, Vente } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { useNotifier } from '../components/Formulaire'
+import { FormulaireAchat, FormulaireCloture, FormulaireDemarrage, FormulaireVente } from '../formulaires/Formulaires'
 import { EtatChargement, useDonnees } from '../components/Chargement'
 import { Courbe } from '../components/Graphique'
 import {
@@ -51,6 +54,8 @@ export default function BandeDetail() {
 
   const voitVentes = aLeRole('Admin', 'Comptable')
   const voitAchats = aLeRole('Admin', 'Comptable', 'Fermier')
+  const notifier = useNotifier()
+  const [formulaire, setFormulaire] = useEtatUrl<'' | 'cloture' | 'demarrage'>('formulaire', '')
 
   if (!donnees) {
     return (
@@ -98,18 +103,55 @@ export default function BandeDetail() {
           </>
         }
         actions={
-          peutSaisir &&
-          (suiviDuJour ? (
-            <span className="etat-fait">
-              <IconeCoche taille={18} /> Suivi du jour {suiviDuJour.jour} fait
-            </span>
-          ) : (
-            <Link to={`/bandes/${bande.id}/suivi`} className="bouton-principal">
-              <IconePlus taille={20} /> Saisir le suivi du jour
-            </Link>
-          ))
+          <>
+            {bande.statut === 'EnPreparation' && aLeRole('Admin', 'Fermier') && (
+              <button className="bouton-contour" onClick={() => setFormulaire('demarrage')}>
+                Démarrer l’élevage
+              </button>
+            )}
+            {bande.statut === 'EnCours' && aLeRole('Admin', 'Fermier') && (
+              <button className="bouton-contour" onClick={() => setFormulaire('cloture')}>
+                Clôturer
+              </button>
+            )}
+            {peutSaisir &&
+              (suiviDuJour ? (
+                <span className="etat-fait">
+                  <IconeCoche taille={18} /> Suivi du jour {suiviDuJour.jour} fait
+                </span>
+              ) : (
+                <Link to={`/bandes/${bande.id}/suivi`} className="bouton-principal">
+                  <IconePlus taille={20} /> Saisir le suivi du jour
+                </Link>
+              ))}
+          </>
         }
       />
+
+      {bande.statut === 'EnPreparation' && (
+        <FormulaireDemarrage
+          bande={bande}
+          ouvert={formulaire === 'demarrage'}
+          onFermer={() => setFormulaire('')}
+          onCree={(b) => {
+            setFormulaire('')
+            notifier(`Élevage de la bande ${b.code} démarré`)
+            void recharger()
+          }}
+        />
+      )}
+      {bande.statut === 'EnCours' && (
+        <FormulaireCloture
+          bande={bande}
+          ouvert={formulaire === 'cloture'}
+          onFermer={() => setFormulaire('')}
+          onCree={(b) => {
+            setFormulaire('')
+            notifier(`Bande ${b.code} clôturée`)
+            void recharger()
+          }}
+        />
+      )}
 
       {active && (
         <div className="progression-cycle apparition">
@@ -161,8 +203,10 @@ export default function BandeDetail() {
         {onglet === 'apercu' && <Apercu bande={bande} suivis={suivis} />}
         {onglet === 'journal' && <Journal suivis={suivis} />}
         {onglet === 'stocks' && <StocksBande bandeId={bande.id} />}
-        {onglet === 'ventes' && voitVentes && <VentesBande bandeId={bande.id} />}
-        {onglet === 'achats' && voitAchats && <AchatsBande bandeId={bande.id} />}
+        {onglet === 'ventes' && voitVentes && <VentesBande bandeId={bande.id} peutCreer onChange={() => void recharger()} />}
+        {onglet === 'achats' && voitAchats && (
+          <AchatsBande bandeId={bande.id} peutCreer={aLeRole('Admin', 'Comptable')} onChange={() => void recharger()} />
+        )}
       </div>
     </main>
   )
@@ -319,17 +363,24 @@ function StocksBande({ bandeId }: { bandeId: number }) {
   )
 }
 
-function VentesBande({ bandeId }: { bandeId: number }) {
+function VentesBande({ bandeId, peutCreer, onChange }: { bandeId: number; peutCreer: boolean; onChange: () => void }) {
+  const notifier = useNotifier()
+  const [ouvert, setOuvert] = useState(false)
   const { donnees, erreur, enCours, recharger } = useDonnees(async () => avecNomsVentes(await api.get<Vente[]>(`/Ventes/bande/${bandeId}`)), [bandeId])
   if (!donnees) return <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
   const total = donnees.reduce((s, v) => s + v.montantTotal, 0)
   return (
     <>
-      {donnees.length > 0 && (
+      <div className="barre-onglet">
         <p className="resultat-compte">
           {donnees.length} vente{donnees.length > 1 ? 's' : ''} · <strong>{monnaie(total)}</strong>
         </p>
-      )}
+        {peutCreer && (
+          <button className="bouton-contour petit" onClick={() => setOuvert(true)}>
+            <IconePlus taille={16} /> Nouvelle vente
+          </button>
+        )}
+      </div>
       <Tableau
         lignes={donnees}
         colonnes={colonnesVente.filter((c) => c.cle !== 'bande')}
@@ -337,27 +388,56 @@ function VentesBande({ bandeId }: { bandeId: number }) {
         triInitial={{ cle: 'date', sens: 'desc' }}
         vide={<Vide icone={<IconeVente taille={28} />} titre="Aucune vente pour cette bande" />}
       />
+      <FormulaireVente
+        bandeId={bandeId}
+        ouvert={ouvert}
+        onFermer={() => setOuvert(false)}
+        onCree={(v) => {
+          setOuvert(false)
+          notifier(`Vente de ${monnaie(v.montantTotal)} enregistrée`)
+          void recharger()
+          onChange()
+        }}
+      />
     </>
   )
 }
 
-function AchatsBande({ bandeId }: { bandeId: number }) {
+function AchatsBande({ bandeId, peutCreer, onChange }: { bandeId: number; peutCreer: boolean; onChange: () => void }) {
+  const notifier = useNotifier()
+  const [ouvert, setOuvert] = useState(false)
   const { donnees, erreur, enCours, recharger } = useDonnees(async () => avecNomsAchats(await api.get<Achat[]>(`/Achats/bande/${bandeId}`)), [bandeId])
   if (!donnees) return <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
   const total = donnees.reduce((s, a) => s + a.montantTotal, 0)
   return (
     <>
-      {donnees.length > 0 && (
+      <div className="barre-onglet">
         <p className="resultat-compte">
           {donnees.length} achat{donnees.length > 1 ? 's' : ''} · <strong>{monnaie(total)}</strong>
         </p>
-      )}
+        {peutCreer && (
+          <button className="bouton-contour petit" onClick={() => setOuvert(true)}>
+            <IconePlus taille={16} /> Nouvel achat
+          </button>
+        )}
+      </div>
       <Tableau
         lignes={donnees}
         colonnes={colonnesAchat.filter((c) => c.cle !== 'bande')}
         cle={(a) => a.id}
         triInitial={{ cle: 'date', sens: 'desc' }}
         vide={<Vide icone={<IconePanier taille={28} />} titre="Aucun achat pour cette bande" />}
+      />
+      <FormulaireAchat
+        bandeId={bandeId}
+        ouvert={ouvert}
+        onFermer={() => setOuvert(false)}
+        onCree={(a) => {
+          setOuvert(false)
+          notifier(`Achat de ${monnaie(a.montantTotal)} enregistré`)
+          void recharger()
+          onChange()
+        }}
       />
     </>
   )
@@ -367,7 +447,8 @@ function AchatsBande({ bandeId }: { bandeId: number }) {
 
 /** Petite fête après une saisie réussie : coche qui se dessine + confettis. */
 function Celebration({ message }: { message: string }) {
-  return (
+  // Portail : au-dessus de tout, quelle que soit l'animation de la page
+  return createPortal(
     <div className="celebration" role="status">
       <div className="confettis" aria-hidden="true">
         {Array.from({ length: 14 }, (_, i) => (
@@ -381,6 +462,7 @@ function Celebration({ message }: { message: string }) {
         </svg>
         <p>{message}</p>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
