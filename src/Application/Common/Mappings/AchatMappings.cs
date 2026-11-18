@@ -14,7 +14,7 @@ namespace Application.Common.Mappings
         /// Achat (entité) -> AchatResponseDto.
         /// - TypeAchat, UniteMesure : enums convertis en texte + libellé lisible
         /// - EstRecu, JoursEntreAchatEtReception : valeurs calculées par l'entité
-        /// - FournisseurNom, BandeCode, CreateurNom : non renseignés ici (null)
+        /// - FournisseurNom, BandeCode, CreateurNom : repris de l'entité (jointure SQL du repository)
         /// </summary>
         public static AchatResponseDto ToResponseDto(this Achat achat)
         {
@@ -38,7 +38,10 @@ namespace Application.Common.Mappings
                 JoursEntreAchatEtReception = achat.JoursEntreAchatEtReception,
                 Observations = achat.Observations,
                 CreatedAt = achat.CreatedAt,
-                CreatedBy = achat.CreatedBy
+                CreatedBy = achat.CreatedBy,
+                BandeCode = achat.BandeCode,
+                FournisseurNom = achat.FournisseurNom,
+                CreateurNom = achat.CreateurNom
             };
         }
 

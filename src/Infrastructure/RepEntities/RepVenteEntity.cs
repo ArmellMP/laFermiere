@@ -66,6 +66,9 @@ namespace Infrastructure.RepEntities
             return new Vente
             {
                 Id = this.Id,
+                BandeCode = this.BandeCode,
+                ClientNom = this.ClientNom,
+                CreateurNom = this.CreateurNom,
                 BandeId = this.BandeId,
                 ClientId = this.ClientId,
                 CreatedBy = this.CreatedBy,

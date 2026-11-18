@@ -12,7 +12,7 @@ namespace Application.Common.Mappings
         /// <summary>
         /// Stock (entité) -> StockResponseDto.
         /// - Type et UniteMesure : enums convertis en texte ("Aliment", "Kg")
-        /// - BandeCode et FournisseurNom : non renseignés ici (null), ils viendraient d'une jointure
+        /// - BandeCode et FournisseurNom : repris de l'entité (jointure SQL du repository)
         /// - TypeLibelle, EstEnAlerte, ValeurStock... : calculés par le DTO lui-même
         /// </summary>
         public static StockResponseDto ToResponseDto(this Stock stock)
@@ -31,6 +31,8 @@ namespace Application.Common.Mappings
                 PrixUnitaire = stock.PrixUnitaire,
                 FournisseurId = stock.FournisseurId,
                 CreatedAt = stock.CreatedAt,
+                BandeCode = stock.BandeCode,
+                FournisseurNom = stock.FournisseurNom,
                 UpdatedAt = stock.UpdatedAt
             };
         }

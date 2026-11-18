@@ -49,6 +49,8 @@ namespace Infrastructure.RepEntities
             return new Stock
             {
                 Id = this.Id,
+                BandeCode = this.BandeCode,
+                FournisseurNom = this.FournisseurNom,
                 BandeId = this.BandeId,
                 Type = typeStock,
                 Nom = this.Nom,

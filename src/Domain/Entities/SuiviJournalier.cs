@@ -7,6 +7,14 @@ namespace Domain.Entities
     {
         // ==== PROPRIÉTÉS DE BASE ====
         public int Id { get; set; }
+
+        // ==== INFORMATIONS LIÉES (lecture seule) ====
+        // Lues par jointure SQL dans le repository, pour l'affichage uniquement.
+        // Jamais écrites en base : la référence reste l'identifiant (BandeId...).
+        public string? BandeCode { get; set; }
+        public string? StockConsommeNom { get; set; }
+        public string? UniteMesureStock { get; set; }
+        public string? CreateurNom { get; set; }
         public int BandeId { get; set; }
         public int Jour { get; set; }
         public DateTime DateSuivi { get; set; }

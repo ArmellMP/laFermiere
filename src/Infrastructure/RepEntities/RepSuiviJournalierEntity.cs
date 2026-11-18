@@ -51,6 +51,10 @@ namespace Infrastructure.RepEntities
             return new SuiviJournalier
             {
                 Id = this.Id,
+                BandeCode = this.BandeCode,
+                StockConsommeNom = this.StockNom,
+                UniteMesureStock = this.StockUniteMesure,
+                CreateurNom = this.CreateurNom,
                 BandeId = this.BandeId,
                 Jour = this.Jour,
                 DateSuivi = this.DateSuivi,
