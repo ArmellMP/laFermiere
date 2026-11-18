@@ -1,150 +1,292 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, lireListe } from '../api/client'
-import type { Bande, Page } from '../api/types'
-import { useAuth } from '../auth/AuthContext'
-import { Anneau, Compteur } from '../components/Anime'
+import { api } from '../api/client'
+import type { Bande, StatutBande } from '../api/types'
+import { Anneau } from '../components/Anime'
 import { EtatChargement, useDonnees } from '../components/Chargement'
-import { IconeChevron, IconeCoeur, IconeLune, IconePoussin, IconeSoleil } from '../components/Icones'
-import { DUREE_CYCLE, aujourdhui, dateLisible, jourDElevage, nombre } from '../outils'
+import { IconeChevron, IconeCoeur, IconeHorloge, IconePoussin, IconeRecherche } from '../components/Icones'
+import {
+  Badge,
+  BarreOutils,
+  BasculeVue,
+  EnTetePage,
+  Indicateurs,
+  Jauge,
+  Puces,
+  Recherche,
+  SelecteurTri,
+  Vide,
+  useEtatUrl,
+  type Vue,
+} from '../components/Page'
+import { Tableau, type Colonne } from '../components/Tableau'
+import { LIBELLE_STATUT, TON_STATUT, ageBande, estActive, finDeCycleProche, joursRestants, tonMortalite } from '../metier'
+import { DUREE_CYCLE, dateLisible, moisLisible, nombre, normaliser } from '../outils'
 
-export const estActive = (b: Bande) => b.statut === 'EnPreparation' || b.statut === 'EnCours'
+type FiltreStatut = 'actives' | 'toutes' | StatutBande
+type Tri = 'recentes' | 'anciennes' | 'age' | 'mortalite' | 'effectif' | 'code'
 
-/** Couleur de la mortalité : vert < 2 %, jaune < 5 %, rouge au-delà (seuil d'alerte de l'API). */
-export const niveauMortalite = (taux: number) => (taux >= 5 ? 'danger' : taux >= 2 ? 'vigilance' : 'ok')
+const TRIS: { valeur: Tri; libelle: string }[] = [
+  { valeur: 'recentes', libelle: 'Arrivée : plus récentes' },
+  { valeur: 'anciennes', libelle: 'Arrivée : plus anciennes' },
+  { valeur: 'age', libelle: 'Âge : plus avancées' },
+  { valeur: 'mortalite', libelle: 'Mortalité : plus élevée' },
+  { valeur: 'effectif', libelle: 'Effectif : plus grand' },
+  { valeur: 'code', libelle: 'Code (A → Z)' },
+]
 
-function salutation(): { texte: string; nuit: boolean } {
-  const heure = new Date().getHours()
-  if (heure < 5 || heure >= 19) return { texte: 'Bonsoir', nuit: true }
-  if (heure < 12) return { texte: 'Bonjour', nuit: false }
-  return { texte: 'Bon après-midi', nuit: false }
+const COMPARER: Record<Tri, (a: Bande, b: Bande) => number> = {
+  recentes: (a, b) => b.dateArrivee.localeCompare(a.dateArrivee) || b.code.localeCompare(a.code),
+  anciennes: (a, b) => a.dateArrivee.localeCompare(b.dateArrivee) || a.code.localeCompare(b.code),
+  age: (a, b) => ageBande(b) - ageBande(a),
+  mortalite: (a, b) => b.tauxMortalite - a.tauxMortalite,
+  effectif: (a, b) => b.nbPoussinsActuel - a.nbPoussinsActuel,
+  code: (a, b) => a.code.localeCompare(b.code),
 }
 
 export default function Bandes() {
-  const { utilisateur } = useAuth()
-  const [voirTerminees, setVoirTerminees] = useState(false)
-  const { donnees, erreur, enCours, recharger } = useDonnees(
-    async () => lireListe(await api.get<Bande[] | Page<Bande>>('/Bandes?taille=100')),
-    [],
-  )
+  const [statut, setStatut] = useEtatUrl<FiltreStatut>('statut', 'actives')
+  const [tri, setTri] = useEtatUrl<Tri>('tri', 'recentes')
+  const [vue, setVue] = useEtatUrl<Vue>('vue', 'cartes')
+  const [recherche, setRecherche] = useState('')
 
-  const toutes = donnees ?? []
+  const { donnees, erreur, enCours, recharger } = useDonnees(() => api.liste<Bande>('/Bandes'), [])
+  const toutes = useMemo(() => donnees ?? [], [donnees])
+
+  const compte = (f: (b: Bande) => boolean) => toutes.filter(f).length
   const actives = toutes.filter(estActive)
-  const bandes = toutes
-    .filter((b) => voirTerminees || estActive(b))
-    .sort((a, b) => Number(estActive(b)) - Number(estActive(a)) || b.dateArrivee.localeCompare(a.dateArrivee))
-
   const sujets = actives.reduce((s, b) => s + b.nbPoussinsActuel, 0)
   const initiaux = actives.reduce((s, b) => s + b.nbPoussinsInit, 0)
   const mortalite = initiaux ? ((initiaux - sujets) / initiaux) * 100 : 0
-  const { texte, nuit } = salutation()
-  const prenom = utilisateur?.nom.split(/\s+/)[0] ?? ''
-  const date = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const finProche = toutes.filter(finDeCycleProche).length
+
+  const filtrees = useMemo(() => {
+    const q = normaliser(recherche.trim())
+    return toutes
+      .filter((b) => (statut === 'toutes' ? true : statut === 'actives' ? estActive(b) : b.statut === statut))
+      .filter((b) => !q || normaliser(`${b.code} ${b.observations ?? ''}`).includes(q))
+      .sort(COMPARER[tri])
+  }, [toutes, statut, tri, recherche])
+
+  // Rangement par mois d'arrivée quand la liste est triée par date
+  const groupes = useMemo(() => {
+    if (tri !== 'recentes' && tri !== 'anciennes') return [{ titre: null as string | null, bandes: filtrees }]
+    const parMois = new Map<string, Bande[]>()
+    filtrees.forEach((b) => {
+      const mois = moisLisible(b.dateArrivee)
+      parMois.set(mois, [...(parMois.get(mois) ?? []), b])
+    })
+    return [...parMois].map(([titre, bandes]) => ({ titre, bandes }))
+  }, [filtrees, tri])
+
+  const colonnes: Colonne<Bande>[] = [
+    { cle: 'code', titre: 'Bande', rendu: (b) => <strong className="code">{b.code}</strong>, tri: (b) => b.code, mobile: 'titre' },
+    {
+      cle: 'statut',
+      titre: 'Statut',
+      rendu: (b) => (
+        <Badge ton={TON_STATUT[b.statut]} point={estActive(b)}>
+          {LIBELLE_STATUT[b.statut]}
+        </Badge>
+      ),
+      tri: (b) => b.statut,
+      mobile: 'droite',
+    },
+    { cle: 'arrivee', titre: 'Arrivée', rendu: (b) => dateLisible(b.dateArrivee), tri: (b) => b.dateArrivee, mobile: 'sous-titre' },
+    {
+      cle: 'age',
+      titre: 'Cycle',
+      rendu: (b) => (
+        <span className="cellule-cycle">
+          <span>
+            J{ageBande(b)}
+            <span className="discret">/{DUREE_CYCLE}</span>
+          </span>
+          <Jauge valeur={ageBande(b)} max={DUREE_CYCLE} ton={finDeCycleProche(b) ? 'soleil' : 'vert'} />
+        </span>
+      ),
+      tri: (b) => ageBande(b),
+      mobile: 'detail',
+    },
+    {
+      cle: 'effectif',
+      titre: 'Effectif',
+      rendu: (b) => (
+        <>
+          {nombre(b.nbPoussinsActuel)} <span className="discret">/ {nombre(b.nbPoussinsInit)}</span>
+        </>
+      ),
+      tri: (b) => b.nbPoussinsActuel,
+      alignement: 'droite',
+      mobile: 'detail',
+    },
+    {
+      cle: 'mortalite',
+      titre: 'Mortalité',
+      rendu: (b) => <Badge ton={tonMortalite(b.tauxMortalite)}>{nombre(b.tauxMortalite, 1)} %</Badge>,
+      tri: (b) => b.tauxMortalite,
+      alignement: 'droite',
+      mobile: 'detail',
+    },
+  ]
 
   return (
-    <main>
-      <section className="heros">
-        <div className="heros-decor" aria-hidden="true">
-          <span className="bulle bulle-1" />
-          <span className="bulle bulle-2" />
-          <span className="bulle bulle-3" />
+    <main className="page">
+      <EnTetePage
+        miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Élevage' }, { libelle: 'Bandes' }]}
+        titre="Bandes"
+        sousTitre="Tous vos lots de poulets, du jour d’arrivée à la clôture."
+      />
+
+      <Indicateurs
+        elements={[
+          {
+            libelle: 'Bandes actives',
+            valeur: actives.length,
+            icone: <IconePoussin taille={20} />,
+            ton: 'vert',
+            detail: `${compte((b) => b.statut === 'EnCours')} en cours · ${compte((b) => b.statut === 'EnPreparation')} en préparation`,
+          },
+          { libelle: 'Poulets sur pied', valeur: sujets, icone: <IconePoussin taille={20} />, ton: 'ciel', detail: `sur ${nombre(initiaux)} au départ` },
+          {
+            libelle: 'Mortalité moyenne',
+            valeur: mortalite,
+            decimales: 1,
+            suffixe: ' %',
+            icone: <IconeCoeur taille={20} />,
+            ton: tonMortalite(mortalite),
+            detail: 'bandes actives',
+          },
+          {
+            libelle: 'Fin de cycle proche',
+            valeur: finProche,
+            icone: <IconeHorloge taille={20} />,
+            ton: finProche ? 'soleil' : 'neutre',
+            detail: '7 jours ou moins',
+          },
+        ]}
+      />
+
+      <BarreOutils>
+        <Puces
+          libelle="Filtrer par statut"
+          valeur={statut}
+          onChange={setStatut}
+          options={[
+            { valeur: 'actives', libelle: 'Actives', compte: actives.length, ton: 'vert' },
+            { valeur: 'EnCours', libelle: 'En cours', compte: compte((b) => b.statut === 'EnCours') },
+            { valeur: 'EnPreparation', libelle: 'En préparation', compte: compte((b) => b.statut === 'EnPreparation') },
+            { valeur: 'Cloturee', libelle: 'Clôturées', compte: compte((b) => b.statut === 'Cloturee') },
+            { valeur: 'Archivee', libelle: 'Archivées', compte: compte((b) => b.statut === 'Archivee') },
+            { valeur: 'toutes', libelle: 'Toutes', compte: toutes.length },
+          ]}
+        />
+        <div className="barre-outils-ligne">
+          <Recherche valeur={recherche} onChange={setRecherche} placeholder="Rechercher un code…" />
+          <SelecteurTri options={TRIS} valeur={tri} onChange={setTri} />
+          <BasculeVue valeur={vue} onChange={setVue} />
         </div>
-        <div className="heros-contenu">
-          <p className="heros-date">
-            {nuit ? <IconeLune taille={18} /> : <IconeSoleil taille={18} className="tourne" />}
-            <span className="capitalise">{date}</span>
+      </BarreOutils>
+
+      <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} squelettes={4} />
+
+      {!enCours && !erreur && (
+        <>
+          <p className="resultat-compte">
+            {filtrees.length} bande{filtrees.length > 1 ? 's' : ''}
+            {recherche && ` pour « ${recherche} »`}
           </p>
-          <h1>
-            {texte} {prenom} <span className="main-salut">👋</span>
-          </h1>
-          <div className="resume">
-            <div className="resume-carte apparition retard-1">
-              <span className="resume-valeur">
-                <Compteur valeur={actives.length} />
-              </span>
-              <span className="resume-etiquette">bande{actives.length > 1 ? 's' : ''} en cours</span>
-            </div>
-            <div className="resume-carte apparition retard-2">
-              <span className="resume-valeur">
-                <Compteur valeur={sujets} />
-              </span>
-              <span className="resume-etiquette">poulets sur pied</span>
-            </div>
-            <div className="resume-carte apparition retard-3">
-              <span className={`resume-valeur niveau-${niveauMortalite(mortalite)}`}>
-                <Compteur valeur={mortalite} decimales={1} suffixe=" %" />
-              </span>
-              <span className="resume-etiquette">mortalité</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <div className="page">
-        <div className="entete-section">
-          <h2>Mes bandes</h2>
-          <label className="interrupteur">
-            <input type="checkbox" role="switch" checked={voirTerminees} onChange={(e) => setVoirTerminees(e.target.checked)} />
-            <span className="interrupteur-piste" aria-hidden="true" />
-            <span>Terminées</span>
-          </label>
-        </div>
-
-        <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} squelettes={3} />
-
-        {!enCours && !erreur && bandes.length === 0 && (
-          <div className="vide apparition">
-            <IconePoussin taille={48} />
-            <p>{voirTerminees ? 'Aucune bande enregistrée.' : 'Aucune bande en cours pour le moment.'}</p>
-          </div>
-        )}
-
-        <ul className="grille-bandes">
-          {bandes.map((b, i) => (
-            <li key={b.id} className="apparition" style={{ animationDelay: `${Math.min(i, 8) * 70}ms` }}>
-              <CarteBande bande={b} />
-            </li>
-          ))}
-        </ul>
-      </div>
+          {filtrees.length === 0 ? (
+            <Vide
+              icone={<IconeRecherche taille={28} />}
+              titre="Aucune bande ne correspond"
+              texte="Essayez un autre statut ou une autre recherche."
+              action={
+                <button className="bouton-contour" onClick={() => (setStatut('toutes'), setRecherche(''))}>
+                  Voir toutes les bandes
+                </button>
+              }
+            />
+          ) : vue === 'tableau' ? (
+            <Tableau lignes={filtrees} colonnes={colonnes} cle={(b) => b.id} lien={(b) => `/bandes/${b.id}`} />
+          ) : (
+            groupes.map((g) => (
+              <section key={g.titre ?? 'tout'} className="groupe">
+                {g.titre && (
+                  <h2 className="groupe-titre">
+                    <span>{g.titre}</span>
+                    <span className="groupe-compte">{g.bandes.length}</span>
+                  </h2>
+                )}
+                <ul className="grille-cartes">
+                  {g.bandes.map((b, i) => (
+                    <li key={b.id} className="apparition" style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
+                      <CarteBande bande={b} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
+          )}
+        </>
+      )}
     </main>
   )
 }
 
-function CarteBande({ bande }: { bande: Bande }) {
+export function CarteBande({ bande }: { bande: Bande }) {
   const active = estActive(bande)
-  const jour = jourDElevage(bande.dateArrivee, aujourdhui())
-  const niveau = niveauMortalite(bande.tauxMortalite)
+  const age = ageBande(bande)
+  const restants = joursRestants(bande)
 
   return (
-    <Link to={`/bandes/${bande.id}`} className={`carte-bande ${active ? '' : 'carte-terminee'}`}>
-      {active ? (
-        <Anneau jour={Math.min(jour, 99)} total={DUREE_CYCLE} />
-      ) : (
-        <div className="anneau-termine">
-          <IconePoussin taille={30} />
-        </div>
-      )}
-
-      <div className="carte-bande-corps">
-        <div className="carte-bande-haut">
+    <Link to={`/bandes/${bande.id}`} className="carte-bande">
+      <div className="carte-bande-haut">
+        <div>
           <strong className="code">{bande.code}</strong>
-          <span className={`statut statut-${bande.statut}`}>{bande.statutLibelle}</span>
+          <span className="carte-bande-date">Arrivée le {dateLisible(bande.dateArrivee)}</span>
         </div>
-        <p className="carte-bande-date">Arrivée le {dateLisible(bande.dateArrivee)}</p>
-        <div className="carte-bande-chiffres">
-          <span className="puce">
-            <IconePoussin taille={16} />
-            {nombre(bande.nbPoussinsActuel)}
-          </span>
-          <span className={`puce puce-${niveau}`}>
-            <IconeCoeur taille={16} />
-            {nombre(bande.tauxMortalite, 1)} %
-          </span>
-        </div>
+        <Badge ton={TON_STATUT[bande.statut]} point={active}>
+          {LIBELLE_STATUT[bande.statut]}
+        </Badge>
       </div>
 
-      <IconeChevron className="carte-fleche" />
+      <div className="carte-bande-milieu">
+        {active ? (
+          <Anneau jour={Math.min(age, 99)} total={DUREE_CYCLE} taille={68} epaisseur={7} />
+        ) : (
+          <span className="anneau-termine">
+            <IconePoussin taille={26} />
+          </span>
+        )}
+        <dl className="carte-bande-mesures">
+          <div>
+            <dt>Effectif</dt>
+            <dd>
+              {nombre(bande.nbPoussinsActuel)}
+              <span className="discret"> / {nombre(bande.nbPoussinsInit)}</span>
+            </dd>
+          </div>
+          <div>
+            <dt>Mortalité</dt>
+            <dd className={`texte-${tonMortalite(bande.tauxMortalite)}`}>{nombre(bande.tauxMortalite, 1)} %</dd>
+          </div>
+          <div>
+            <dt>{active ? 'Reste' : 'Durée'}</dt>
+            <dd>{active ? `${restants} j` : `${age} j`}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div className="carte-bande-bas">
+        <span className={finDeCycleProche(bande) ? 'texte-soleil' : 'discret'}>
+          {active ? (finDeCycleProche(bande) ? 'Fin de cycle proche' : `Jour ${age} sur ${DUREE_CYCLE}`) : `Terminée${bande.dateCloture ? ` le ${dateLisible(bande.dateCloture)}` : ''}`}
+        </span>
+        <span className="carte-bande-ouvrir">
+          Ouvrir <IconeChevron taille={16} />
+        </span>
+      </div>
     </Link>
   )
 }

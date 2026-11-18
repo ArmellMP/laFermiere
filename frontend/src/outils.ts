@@ -39,3 +39,26 @@ export function nombre(n: number, decimales = 0): string {
 
 /** Durée normale d'un cycle (paramètre DureeCycle de l'API). */
 export const DUREE_CYCLE = 45
+
+/** Montant en francs CFA : 125000 -> "125 000 FCFA" */
+export function monnaie(n: number): string {
+  return `${Math.round(n).toLocaleString('fr-FR')} FCFA`
+}
+
+/** Montant compact pour les indicateurs : 1250000 -> "1,25 M FCFA" */
+export function monnaieCompacte(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return `${nombre(n / 1_000_000, 2)} M FCFA`
+  if (Math.abs(n) >= 10_000) return `${nombre(n / 1_000, 0)} k FCFA`
+  return monnaie(n)
+}
+
+/** Libellé du mois d'une date ISO : "novembre 2026" */
+export function moisLisible(iso: string): string {
+  const [a, m] = partieDate(iso).split('-').map(Number)
+  return new Date(a, m - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+}
+
+/** Normalise un texte pour la recherche : minuscules, sans accents. */
+export function normaliser(texte: string): string {
+  return texte.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}

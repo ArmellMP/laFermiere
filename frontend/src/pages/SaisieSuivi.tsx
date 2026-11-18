@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { EnTetePage } from '../components/Page'
 import { ErreurApi, api } from '../api/client'
 import type { Bande, NouveauSuivi, Suivi, TypeSoin } from '../api/types'
 import { EtatChargement, useDonnees } from '../components/Chargement'
@@ -11,7 +12,6 @@ import {
   IconeMoins,
   IconeNote,
   IconePlus,
-  IconeRetour,
   IconeSeringue,
 } from '../components/Icones'
 import { aujourdhui, dateLisible, jourDElevage, partieDate } from '../outils'
@@ -56,10 +56,8 @@ export default function SaisieSuivi() {
 
   if (!bande) {
     return (
-      <main className="page">
-        <Link to={`/bandes/${id}`} className="lien-retour">
-          <IconeRetour taille={20} /> Retour
-        </Link>
+      <main className="page page-saisie">
+        <EnTetePage miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: 'Suivi du jour' }]} titre="Suivi du jour" />
         <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
       </main>
     )
@@ -126,15 +124,16 @@ export default function SaisieSuivi() {
 
   return (
     <main className="page page-saisie">
-      <Link to={`/bandes/${bande.id}`} className="lien-retour">
-        <IconeRetour taille={20} /> {bande.code}
-      </Link>
-
-      <div className="saisie-entete apparition">
-        <span className="saisie-jour">Jour {jour}</span>
-        <h1>Suivi du jour</h1>
-        <p className="discret">{dateLisible(date)}</p>
-      </div>
+      <EnTetePage
+        miettes={[
+          { libelle: 'Bandes', vers: '/bandes' },
+          { libelle: bande.code, vers: `/bandes/${bande.id}` },
+          { libelle: 'Suivi du jour' },
+        ]}
+        titre="Suivi du jour"
+        badge={<span className="saisie-jour">Jour {jour}</span>}
+        sousTitre={`${bande.code} · ${dateLisible(date)}`}
+      />
 
       {erreurEnvoi && (
         <div className="message message-erreur apparition" role="alert" key={erreurEnvoi}>

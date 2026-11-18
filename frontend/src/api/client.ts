@@ -106,7 +106,25 @@ export function lireListe<T>(donnees: T[] | Page<T>): T[] {
   return Array.isArray(donnees) ? donnees : donnees.items
 }
 
+/**
+ * Charge TOUTE une liste : avec la pagination de l'API (100 éléments au plus par page),
+ * les pages suivantes sont demandées jusqu'à la dernière. Sans pagination, un seul appel.
+ */
+export async function listeComplete<T>(chemin: string): Promise<T[]> {
+  const separateur = chemin.includes('?') ? '&' : '?'
+  const premiere = await requete<T[] | Page<T>>(`${chemin}${separateur}page=1&taille=100`)
+  if (Array.isArray(premiere)) return premiere
+
+  const autres = await Promise.all(
+    Array.from({ length: Math.max(0, premiere.totalPages - 1) }, (_, i) =>
+      requete<Page<T>>(`${chemin}${separateur}page=${i + 2}&taille=100`),
+    ),
+  )
+  return [premiere, ...autres].flatMap((p) => p.items)
+}
+
 export const api = {
   get: <T>(chemin: string) => requete<T>(chemin),
   post: <T>(chemin: string, corps: unknown) => requete<T>(chemin, { method: 'POST', body: JSON.stringify(corps) }),
+  liste: listeComplete,
 }

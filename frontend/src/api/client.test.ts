@@ -1,4 +1,4 @@
-import { ErreurApi, lireListe, requete } from './client'
+import { ErreurApi, listeComplete, lireListe, requete } from './client'
 import { enregistrerSession, lireSession } from './session'
 
 const utilisateur = { id: 1, nom: 'Awa', email: 'awa@ferme.local', role: 'Fermier' as const, roleLibelle: 'Fermier' }
@@ -86,6 +86,22 @@ describe('client API', () => {
     fetchSimule.mockRejectedValueOnce(new TypeError('Failed to fetch'))
 
     await expect(requete('/Bandes')).rejects.toThrow('Impossible de joindre le serveur')
+  })
+
+  it('listeComplete : demande toutes les pages de la pagination', async () => {
+    fetchSimule.mockImplementation(async (url) => {
+      const page = Number(new URL(String(url), 'http://x').searchParams.get('page'))
+      return reponseJson(200, { items: [page * 10], page, taille: 100, total: 3, totalPages: 3 })
+    })
+
+    expect(await listeComplete('/Bandes')).toEqual([10, 20, 30])
+    expect(fetchSimule).toHaveBeenCalledTimes(3)
+  })
+
+  it('listeComplete : un simple tableau (API sans pagination) suffit', async () => {
+    fetchSimule.mockResolvedValueOnce(reponseJson(200, [1, 2]))
+
+    expect(await listeComplete('/Bandes')).toEqual([1, 2])
   })
 
   it('lireListe accepte un tableau ou une page', () => {

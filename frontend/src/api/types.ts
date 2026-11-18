@@ -90,3 +90,101 @@ export interface ReponseErreur {
   errors?: Record<string, string[]> | null
   traceId?: string
 }
+
+export type TypeStock = 'Aliment' | 'Medicament' | 'Vaccin' | 'Materiel' | 'Autre'
+
+export interface Stock {
+  id: number
+  bandeId: number
+  bandeCode?: string | null
+  type: TypeStock
+  typeLibelle: string
+  nom: string
+  quantiteInitiale: number
+  quantiteActuelle: number
+  uniteMesure: string
+  uniteMesureLibelle: string
+  seuilAlerte?: number | null
+  estEnAlerte: boolean
+  datePeremption?: string | null
+  estPerime: boolean
+  joursAvantPeremption: number
+  prixUnitaire?: number | null
+  valeurStock: number
+  fournisseurNom?: string | null
+}
+
+export interface Vente {
+  id: number
+  bandeId: number
+  bandeCode?: string | null
+  clientId: number
+  clientNom?: string | null
+  dateVente: string
+  typeVente: string
+  typeVenteLibelle: string
+  quantite: number
+  uniteMesureLibelle: string
+  prixUnitaire: number
+  montantTotal: number
+  modePaiementLibelle: string
+  estPaye: boolean
+  datePaiement?: string | null
+}
+
+export interface Achat {
+  id: number
+  fournisseurId: number
+  fournisseurNom?: string | null
+  bandeId: number
+  bandeCode?: string | null
+  dateAchat: string
+  typeAchat: string
+  typeAchatLibelle: string
+  description?: string | null
+  quantite: number
+  uniteMesureLibelle: string
+  prixUnitaire: number
+  montantTotal: number
+  factureNumero?: string | null
+  estRecu: boolean
+}
+
+export interface Client {
+  id: number
+  nom: string
+  typeClient: string
+  typeClientLibelle: string
+  telephone?: string | null
+  email?: string | null
+  estActif: boolean
+  nombreVentes?: number | null
+  montantTotalAchats?: number | null
+}
+
+export interface Fournisseur {
+  id: number
+  nom: string
+  typeFournisseur: string
+  typeFournisseurLibelle: string
+  telephone?: string | null
+  email?: string | null
+  contactPersonne?: string | null
+  estActif: boolean
+  nombreAchats?: number | null
+  montantTotalAchats?: number | null
+}
+
+export type NiveauAlerte = 'Info' | 'Avertissement' | 'Critique'
+
+export interface Alerte {
+  id: number
+  typeAlerte: string
+  typeAlerteLibelle: string
+  entiteId: number
+  niveau: NiveauAlerte
+  niveauLibelle: string
+  message: string
+  estLue: boolean
+  dateAlerte: string
+}
