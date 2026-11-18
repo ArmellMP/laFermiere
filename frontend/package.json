@@ -10,6 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "5.2.9",
+    "@fontsource-variable/nunito": "5.2.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-router-dom": "7.6.2"

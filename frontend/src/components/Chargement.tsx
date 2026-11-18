@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ErreurApi } from '../api/client'
+import { IconeAlerte } from './Icones'
 
 /** Charge des données au montage ; recharger() relance l'appel (bouton « Réessayer »). */
 export function useDonnees<T>(charger: () => Promise<T>, dependances: unknown[]) {
@@ -28,23 +29,36 @@ export function useDonnees<T>(charger: () => Promise<T>, dependances: unknown[])
   return { donnees, erreur, enCours, recharger }
 }
 
+/** Pendant le chargement : cartes « fantômes » qui scintillent. En cas d'erreur : message + Réessayer. */
 export function EtatChargement({
   enCours,
   erreur,
   recharger,
+  squelettes = 2,
 }: {
   enCours: boolean
   erreur: string | null
   recharger: () => void
+  squelettes?: number
 }) {
-  if (enCours) return <p className="discret centre" role="status">Chargement…</p>
+  if (enCours)
+    return (
+      <div className="squelettes" role="status" aria-label="Chargement">
+        {Array.from({ length: squelettes }, (_, i) => (
+          <div key={i} className="squelette" />
+        ))}
+      </div>
+    )
   if (erreur)
     return (
-      <div className="alerte erreur" role="alert">
-        <p>{erreur}</p>
-        <button className="bouton" onClick={recharger}>
-          Réessayer
-        </button>
+      <div className="message message-erreur apparition" role="alert">
+        <IconeAlerte />
+        <div>
+          <p>{erreur}</p>
+          <button className="bouton-secondaire" onClick={recharger}>
+            Réessayer
+          </button>
+        </div>
       </div>
     )
   return null
