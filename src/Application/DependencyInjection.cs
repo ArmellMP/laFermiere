@@ -60,6 +60,11 @@ namespace Application
             // mais ne les EXÉCUTE pas. C'est ValidationBehavior (ci-dessus) qui les appelle.
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            // ============================================
+            // 3. SESSIONS DE CONNEXION (jeton d'accès + refresh token)
+            // ============================================
+            services.AddScoped<Common.Security.ISessionService, Common.Security.SessionService>();
+
             return services;
         }
     }

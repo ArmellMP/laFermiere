@@ -18,16 +18,19 @@ namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
     public class AuthenticateUserQueryHandler : IRequestHandler<AuthenticateUserQuery, AuthenticateUserResponse>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
-        private readonly IJwtService _jwtService;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly ISessionService _sessionService;
         private readonly ILogger<AuthenticateUserQueryHandler> _logger;
 
         public AuthenticateUserQueryHandler(
             IUtilisateurRepository utilisateurRepository,
-            IJwtService jwtService,
+            IRefreshTokenRepository refreshTokenRepository,
+            ISessionService sessionService,
             ILogger<AuthenticateUserQueryHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
-            _jwtService = jwtService;
+            _refreshTokenRepository = refreshTokenRepository;
+            _sessionService = sessionService;
             _logger = logger;
         }
 
@@ -53,11 +56,10 @@ namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
                 throw new UnauthorizedAccessException("Votre compte est désactivé. Veuillez contacter l'administrateur.");
             }
 
-            // 2. Générer le token JWT
-            var token = _jwtService.GenerateToken(
-                utilisateur.Id, 
-                utilisateur.Email, 
-                utilisateur.Role.ToString());
+            // 2. Nouvelle session : jeton d'accès (15 min) + refresh token (7 jours).
+            //    Ménage au passage : les refresh tokens expirés de cet utilisateur sont supprimés.
+            await _refreshTokenRepository.SupprimerExpiresAsync(utilisateur.Id, DateTime.UtcNow, cancellationToken);
+            var jetons = await _sessionService.EmettreAsync(utilisateur, familleId: null, cancellationToken);
 
             // 3. Mettre à jour la date de dernière connexion
             await _utilisateurRepository.UpdateDerniereConnexionAsync(
@@ -71,8 +73,10 @@ namespace Application.Features.Utilisateurs.Queries.AuthenticateUser
             return new AuthenticateUserResponse
             {
                 Utilisateur = utilisateur.ToResponseDto(),
-                Token = token,
-                Expiration = DateTime.UtcNow.AddMinutes(60) // À configurer
+                Token = jetons.Token,
+                Expiration = jetons.Expiration,
+                RefreshToken = jetons.RefreshToken,
+                RefreshExpiration = jetons.RefreshExpiration
             };
         }
     }

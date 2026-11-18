@@ -14,6 +14,9 @@ namespace Application.Common.Security
     public interface IJwtService
     {
         string GenerateToken(int userId, string email, string role);
+
+        /// <summary>Durée de validité d'un jeton d'accès (JwtSettings:ExpirationMinutes, 15 min par défaut).</summary>
+        TimeSpan DureeValidite { get; }
         bool ValidateToken(string token);
     }
 
@@ -26,6 +29,11 @@ namespace Application.Common.Security
             _configuration = configuration;
         }
 
+        // Jeton d'accès court : un jeton volé n'est utilisable que peu de temps.
+        // Le refresh token (voir SessionService) évite de redemander le mot de passe.
+        public TimeSpan DureeValidite =>
+            TimeSpan.FromMinutes(int.Parse(_configuration["JwtSettings:ExpirationMinutes"] ?? "15"));
+
         public string GenerateToken(int userId, string email, string role)
         {
             // Lire les paramètres JWT
@@ -34,7 +42,6 @@ namespace Application.Common.Security
                 ?? throw new InvalidOperationException("JWT SecretKey not configured");
             var issuer = jwtSettings["Issuer"] ?? "LaFermiereAPI";
             var audience = jwtSettings["Audience"] ?? "LaFermiereClient";
-            var expirationMinutes = int.Parse(jwtSettings["ExpirationMinutes"] ?? "60");
 
             // Créer la clé de signature
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -57,7 +64,7 @@ namespace Application.Common.Security
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(expirationMinutes),
+                expires: DateTime.UtcNow.Add(DureeValidite),
                 signingCredentials: credentials
             );
 

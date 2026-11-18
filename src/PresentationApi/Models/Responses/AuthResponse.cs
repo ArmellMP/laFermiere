@@ -15,5 +15,12 @@ namespace PresentationApi.Models.Responses
         
         [JsonPropertyName("expiration")]
         public DateTime? Expiration { get; set; }
+
+        /// <summary>À envoyer à /refresh quand le jeton expire, et à /logout pour se déconnecter.</summary>
+        [JsonPropertyName("refreshToken")]
+        public string? RefreshToken { get; set; }
+
+        [JsonPropertyName("refreshExpiration")]
+        public DateTime? RefreshExpiration { get; set; }
     }
 }

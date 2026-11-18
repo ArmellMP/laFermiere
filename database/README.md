@@ -33,3 +33,4 @@ Le mot de passe est demandé à l'exécution : ne jamais l'écrire dans un fichi
 | 001 | 2026-10-31 | Trigger `trg_after_achat_insert` : poussins, services et transport n'entrent plus en stock ; unités vérifiées. |
 | 002 | 2026-10-31 | Colonne `UpdatedAt` ajoutée à `SuivisJournaliers` (la modification d'un suivi échouait). |
 | 003 | 2026-11-01 | Le stock suit la modification et la suppression d'un achat (procédure `sp_ajuster_stock_achat` + triggers INSERT/UPDATE/DELETE). Refus si la quantité à retirer est déjà consommée. |
+| 004 | 2026-11-18 | Table `RefreshTokens` : sessions de connexion renouvelables (jeton d'accès 15 min + refresh token 7 jours, rotation, révocation). Seule l'empreinte SHA-256 du token est stockée. |

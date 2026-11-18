@@ -34,7 +34,7 @@ namespace LaFermiere.IntegrationTests.Infrastructure
                 return Convert.ToInt64(await commande.ExecuteScalarAsync());
             }
 
-            Assert.Equal(10, await Compter(
+            Assert.Equal(11, await Compter(
                 "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = @base AND TABLE_TYPE = 'BASE TABLE'"));
             // 3 triggers d'achat (migration 003) + 3 triggers de suivi journalier
             Assert.Equal(6, await Compter(

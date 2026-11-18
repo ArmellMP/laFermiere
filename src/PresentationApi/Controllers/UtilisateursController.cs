@@ -8,6 +8,8 @@ using PresentationApi.Models.Responses;
 using Application.Features.Utilisateurs.Queries.GetAllUtilisateurs;
 using Application.Features.Utilisateurs.Queries.GetUtilisateurById;
 using Application.Features.Utilisateurs.Queries.AuthenticateUser;
+using Application.Features.Utilisateurs.Commands.RafraichirSession;
+using Application.Features.Utilisateurs.Commands.Deconnecter;
 using Application.Features.Utilisateurs.Commands.CreateUtilisateur;
 using Application.Features.Utilisateurs.Commands.UpdateUtilisateur;
 using Application.Features.Utilisateurs.Commands.DeleteUtilisateur;
@@ -93,7 +95,9 @@ namespace PresentationApi.Controllers
                     Message = "Authentification réussie",
                     Utilisateur = result.Utilisateur.ToResponse(),
                     Token = result.Token,
-                    Expiration = result.Expiration
+                    Expiration = result.Expiration,
+                    RefreshToken = result.RefreshToken,
+                    RefreshExpiration = result.RefreshExpiration
                 };
 
                 return Ok(response);
@@ -106,6 +110,50 @@ namespace PresentationApi.Controllers
                     Message = ex.Message
                 });
             }
+        }
+
+        /// <summary>
+        /// Échange un refresh token contre un nouveau jeton d'accès ET un nouveau refresh token.
+        /// L'ancien refresh token devient inutilisable ; le présenter à nouveau ferme la session.
+        /// </summary>
+        [HttpPost("refresh")]
+        [AllowAnonymous]   // le jeton d'accès est justement expiré : c'est le refresh token qui authentifie
+        [ProducesResponseType(typeof(AuthResponse), 200)]
+        [ProducesResponseType(typeof(AuthResponse), 401)]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                var result = await _mediator.Send(new RafraichirSessionCommand { RefreshToken = request.RefreshToken });
+
+                return Ok(new AuthResponse
+                {
+                    Success = true,
+                    Message = "Session renouvelée",
+                    Utilisateur = result.Utilisateur.ToResponse(),
+                    Token = result.Token,
+                    Expiration = result.Expiration,
+                    RefreshToken = result.RefreshToken,
+                    RefreshExpiration = result.RefreshExpiration
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new AuthResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Déconnexion : ferme la session du refresh token envoyé. Répond toujours 204.
+        /// Le client doit aussi oublier son jeton d'accès (valable encore 15 min au plus).
+        /// </summary>
+        [HttpPost("logout")]
+        [AllowAnonymous]   // fonctionne même si le jeton d'accès a expiré
+        [ProducesResponseType(204)]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+        {
+            await _mediator.Send(new DeconnecterCommand { RefreshToken = request.RefreshToken });
+            return NoContent();
         }
 
         // ============================================
