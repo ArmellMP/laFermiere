@@ -1,0 +1,434 @@
+/* La Fermière — styles pensés d'abord pour le téléphone, utilisé dehors en plein jour :
+   contrastes forts, grands caractères, zones tactiles d'au moins 48 px. */
+
+:root {
+  --vert: #2f6b3a;
+  --vert-fonce: #234f2b;
+  --vert-clair: #e3efe2;
+  --jaune: #e0a526;
+  --rouge: #b3261e;
+  --rouge-clair: #fbe9e7;
+  --fond: #f6f4ee;
+  --carte: #ffffff;
+  --texte: #1d1f1b;
+  --discret: #5c6158;
+  --bordure: #d9d6cc;
+  --rayon: 14px;
+  --ombre: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.04);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --vert: #6fbf73;
+    --vert-fonce: #8fd493;
+    --vert-clair: #1f3322;
+    --rouge: #ff8a80;
+    --rouge-clair: #3a1d1b;
+    --fond: #121411;
+    --carte: #1c1f1a;
+    --texte: #eceee8;
+    --discret: #a4a99f;
+    --bordure: #34382f;
+    --ombre: none;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0.25rem 0 1rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.carte h2 {
+  margin-top: 0;
+}
+
+/* ---- Barre du haut ---- */
+.barre {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  background: var(--vert);
+  color: #fff;
+}
+
+.barre .titre {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.barre .utilisateur {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.barre .nom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40vw;
+  font-size: 0.95rem;
+}
+
+.barre .bouton.discret {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.5);
+  background: transparent;
+  min-height: 40px;
+  padding: 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* ---- Mise en page ---- */
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem calc(2rem + env(safe-area-inset-bottom));
+}
+
+.entete-page {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.entete-page h1 {
+  margin: 0;
+}
+
+.retour {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--vert);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.carte {
+  display: block;
+  background: var(--carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.liste .carte {
+  margin-bottom: 0;
+}
+
+.carte-lien {
+  color: inherit;
+  text-decoration: none;
+}
+
+.carte-lien:active {
+  transform: scale(0.99);
+}
+
+.ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.code {
+  font-size: 1.15rem;
+}
+
+.grand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.discret {
+  color: var(--discret);
+  font-weight: 400;
+}
+
+.centre {
+  text-align: center;
+}
+
+.attention {
+  color: var(--rouge);
+}
+
+.pastille {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bordure);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pastille-active {
+  background: var(--vert-clair);
+  color: var(--vert-fonce);
+}
+
+.progression {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--vert-clair);
+  overflow: hidden;
+}
+
+.progression > div {
+  height: 100%;
+  background: var(--vert);
+}
+
+.chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.chiffres .valeur {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chiffres .etiquette {
+  color: var(--discret);
+  font-size: 0.85rem;
+}
+
+.suivi .details {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+/* ---- Boutons ---- */
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border: 1px solid var(--bordure);
+  border-radius: 12px;
+  background: var(--carte);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bouton.principal {
+  background: var(--vert);
+  border-color: var(--vert);
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.bouton.bloc {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  margin: 1rem 0;
+}
+
+.bouton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bouton.rond {
+  width: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.6rem;
+}
+
+/* ---- Formulaires ---- */
+.formulaire label {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+  font-weight: 600;
+}
+
+.formulaire label:last-child {
+  margin-bottom: 0;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+  background: var(--carte);
+  color: var(--texte);
+  font: inherit;
+  font-weight: 400;
+  /* 16 px minimum : évite le zoom automatique de Safari sur iPhone */
+  font-size: max(16px, 1rem);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.bouton:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--jaune);
+  outline-offset: 2px;
+}
+
+.en-erreur input,
+.en-erreur select,
+.en-erreur textarea {
+  border-color: var(--rouge);
+}
+
+.erreur-champ {
+  color: var(--rouge);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.interrupteur {
+  display: flex !important;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 48px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.interrupteur input {
+  width: 24px;
+  min-height: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--vert);
+}
+
+.entete-page .interrupteur {
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.compteur {
+  display: grid;
+  grid-template-columns: 56px 1fr 56px;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+}
+
+.compteur input {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  min-height: 56px;
+}
+
+.deux-colonnes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ---- Messages ---- */
+.alerte {
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin: 0 0 0.75rem;
+}
+
+.alerte p {
+  margin: 0 0 0.5rem;
+}
+
+.alerte.erreur {
+  background: var(--rouge-clair);
+  color: var(--rouge);
+  border: 1px solid var(--rouge);
+}
+
+.alerte.succes {
+  background: var(--vert-clair);
+  color: var(--vert-fonce);
+  border: 1px solid var(--vert);
+}
+
+/* ---- Connexion ---- */
+.page-connexion {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 3rem 1rem 2rem;
+}
+
+.marque {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.marque h1 {
+  margin: 0.5rem 0 0.25rem;
+}
+
+.marque p {
+  margin: 0;
+}
+
+.page-connexion .bouton.principal {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 0.5rem;
+}
