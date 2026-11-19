@@ -308,7 +308,8 @@ function Journal({ suivis, bandeId, modifiable, onChange }: { suivis: Suivi[]; b
       titre: `Supprimer le suivi du jour ${s.jour}`,
       route: `/SuiviJournalier/${s.id}`,
       consequence: [
-        s.nbMortalites > 0 && `Les ${s.nbMortalites} mort${s.nbMortalites > 1 ? 's' : ''} seront remis dans l’effectif de la bande.`,
+        s.nbMortalites === 1 && `Le mort sera remis dans l’effectif de la bande.`,
+        s.nbMortalites > 1 && `Les ${s.nbMortalites} morts seront remis dans l’effectif de la bande.`,
         s.quantiteConsommee && `La quantité consommée sera rendue au stock.`,
       ]
         .filter(Boolean)

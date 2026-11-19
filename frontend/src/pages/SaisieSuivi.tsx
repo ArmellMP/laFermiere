@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { EnTetePage } from '../components/Page'
 import { ErreurApi, api } from '../api/client'
@@ -175,7 +176,7 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
         </div>
       )}
 
-      <form onSubmit={valider} noValidate>
+      <form id="formulaire-suivi" onSubmit={valider} noValidate>
         <Section icone={<IconeCalendrier />} couleur="ciel" titre="Date" retard={1}>
           <Champ erreurs={erreursChamps.dateSuivi}>
             <input type="date" value={date} min={dateArrivee} max={aujourdhui()} required disabled={!!existant} onChange={(e) => setDate(e.target.value)} />
@@ -287,11 +288,15 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
         )}
         {erreursChamps.body && <ErreursChamp erreurs={erreursChamps.body} />}
 
-        <div className="barre-validation">
-          <button className="bouton-principal" type="submit" disabled={envoi}>
-            {envoi ? <span className="points">Enregistrement</span> : existant ? 'Enregistrer les modifications' : 'Enregistrer le suivi'}
-          </button>
-        </div>
+        {/* En portail : un ancêtre animé (transform) empêcherait la barre de rester fixée au-dessus des onglets du bas. */}
+        {createPortal(
+          <div className="barre-validation">
+            <button className="bouton-principal" type="submit" form="formulaire-suivi" disabled={envoi}>
+              {envoi ? <span className="points">Enregistrement</span> : existant ? 'Enregistrer les modifications' : 'Enregistrer le suivi'}
+            </button>
+          </div>,
+          document.body,
+        )}
       </form>
     </main>
   )
