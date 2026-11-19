@@ -3,7 +3,7 @@
 -- Source : script d'origine (Wuba\BDD.docx), aligné le 2026-10-31 sur la base
 --          réellement utilisée (structure comparée colonne par colonne),
 --          + corrections des migrations.
--- Dernière migration intégrée : 002_ajouter_updatedat_suivis.sql
+-- Dernière migration intégrée : 003_stock_achats_modification_suppression.sql
 --
 -- RÈGLE : les valeurs des colonnes ENUM doivent être EXACTEMENT les noms des
 -- enums C# correspondants (Domain/Enums). Le code écrit enum.ToString() en base :
@@ -304,9 +304,13 @@ INSERT INTO Parametres (Cle, Valeur, Description, Categorie) VALUES
     ('Devise', 'XAF', 'Devise par défaut', 'Finance'),
     ('EntrepriseNom', 'Ma Ferme Avicole', 'Nom de l''entreprise', 'Systeme');
 
--- Utilisateur admin par défaut
+-- Utilisateur admin par défaut, pour pouvoir se connecter sur une base neuve.
+--   Email : admin@ferme.local   Mot de passe : Admin123
+--   Hash BCrypt (facteur 12), même méthode que Application/Common/Security/PasswordHasher.
+--   (L'ancien hash de ce script était factice : aucun mot de passe ne lui correspondait.)
+--   ⚠️ Mot de passe de DÉVELOPPEMENT, public : à changer sur toute base réelle.
 INSERT INTO Utilisateurs (Nom, Email, PasswordHash, Role) VALUES
-    ('Administrateur', 'admin@ferme.local', '$2a$12$KQ5cZ2c8cXbGpVp8L9qB5.B7dQkYV2fW8cL7mN6pQrS9tUvW1xYzA', 'Admin');
+    ('Administrateur', 'admin@ferme.local', '$2a$12$cno2DpEh3P/m54T4F0LDLOhnpxNd/JNoNvefsv3EwrXMk5GnzSv4e', 'Admin');
 
 -- ============================================
 -- INDEX POUR PERFORMANCES

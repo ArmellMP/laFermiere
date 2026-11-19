@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using MySqlConnector;
 
 namespace LaFermiere.IntegrationTests.Infrastructure
@@ -48,6 +49,17 @@ namespace LaFermiere.IntegrationTests.Infrastructure
         public async Task Api_Demarre_HealthRepond200()
         {
             var reponse = await _api.ClientAnonyme().GetAsync("/health");
+
+            Assert.Equal(HttpStatusCode.OK, reponse.StatusCode);
+        }
+
+        // Le compte admin créé par schema.sql doit être utilisable sur une base neuve
+        // (son hash d'origine était factice : impossible de se connecter après installation).
+        [Fact]
+        public async Task CompteAdminDeSchemaSql_PeutSeConnecter()
+        {
+            var reponse = await _api.ClientAnonyme().PostAsJsonAsync("/api/v1/Utilisateurs/authenticate",
+                new { email = "admin@ferme.local", password = "Admin123" });
 
             Assert.Equal(HttpStatusCode.OK, reponse.StatusCode);
         }

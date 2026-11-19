@@ -20,11 +20,30 @@ Une migration déjà appliquée ne se modifie plus : on en crée une nouvelle.
 
 ## Exécuter un script (XAMPP)
 
-```
-C:\xampp\mysql\bin\mysql.exe -u root -p lafermiere < database\migrations\001_corriger_trigger_achat.sql
+Depuis la racine du dépôt, ouvrir la console MariaDB (le mot de passe est demandé, rien ne s'affiche pendant la saisie) :
+
+```powershell
+& "C:\xampp\mysql\bin\mysql.exe" -u root -p --default-character-set=utf8mb4
 ```
 
-Le mot de passe est demandé à l'exécution : ne jamais l'écrire dans un fichier du dépôt.
+Puis, pour une migration (sur la base existante) :
+
+```sql
+USE lafermiere;
+source database/migrations/003_stock_achats_modification_suppression.sql;
+exit
+```
+
+Ou, pour une base neuve (⚠️ efface la base `lafermiere`) :
+
+```sql
+source database/schema.sql;
+exit
+```
+
+Pourquoi `source` : en PowerShell, la redirection `mysql ... < fichier.sql` n'existe pas (erreur « opérateur réservé »). `source` lit le fichier depuis la console MariaDB et comprend les lignes `DELIMITER` des triggers.
+
+Ne jamais écrire le mot de passe dans un fichier du dépôt.
 
 ## Historique des migrations
 
