@@ -1,7 +1,7 @@
 namespace PresentationApi.Models.Responses
 {
     /// <summary>
-    /// Format UNIQUE de toutes les réponses d'erreur de l'API (400, 401, 404, 500).
+    /// Format UNIQUE de toutes les réponses d'erreur de l'API (400, 401, 404, 409, 500).
     ///
     /// Avant, deux formats coexistaient pour une erreur de validation :
     ///   - DataAnnotations ([Required], [Range]) : format "ProblemDetails" d'ASP.NET

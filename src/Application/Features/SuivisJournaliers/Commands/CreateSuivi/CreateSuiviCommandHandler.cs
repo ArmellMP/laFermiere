@@ -61,7 +61,7 @@ namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
                 
             if (exists)
             {
-                throw new BusinessRuleException(
+                throw new ConflictException(
                     $"Un suivi existe déjà pour la bande {createDto.BandeId} à la date {createDto.DateSuivi:yyyy-MM-dd}.");
             }
 
