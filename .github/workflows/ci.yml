@@ -1,4 +1,4 @@
-# Intégration continue : compile la solution et lance tous les tests
+# Intégration continue : compile la solution et lance tous les tests (API et front-end)
 # à chaque pull request vers master et à chaque push sur master.
 #
 # Les tests d'intégration ont besoin d'une vraie base : un conteneur MariaDB 10.4
@@ -69,3 +69,31 @@ jobs:
           # Lue par BaseDeTest : la base lafermiere_tests est (re)créée sur ce serveur
           LAFERMIERE_TEST_DB_CONNECTION: Server=127.0.0.1;Port=3306;User=root;Password=ci-root;CharSet=utf8mb4;AllowUserVariables=true
         run: dotnet test --project tests/LaFermiere.IntegrationTests --configuration Release --no-build
+
+  front-end:
+    name: Front-end (types, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances (versions exactes du package-lock)
+        run: npm ci
+
+      - name: Tests (Vitest)
+        run: npm test
+
+      - name: Vérification des types et build de production
+        run: npm run build
