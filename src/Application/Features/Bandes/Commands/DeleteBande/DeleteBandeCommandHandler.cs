@@ -36,6 +36,7 @@ namespace Application.Features.Bandes.Commands.DeleteBande
 
             // 2. Valider qu'on peut supprimer cette bande
             ValidateCanDelete(existingBande);
+            await ValidateBandeVideAsync(request.Id, cancellationToken);
 
             // 3. Supprimer la bande
             await _bandeRepository.DeleteAsync(request.Id, cancellationToken);
@@ -57,12 +58,7 @@ namespace Application.Features.Bandes.Commands.DeleteBande
                     "Veuillez d'abord la clôturer.");
             }
             
-            // Règle 2 : Vérifier s'il y a des données liées
-            // TODO: Vérifier s'il y a des suivis journaliers, ventes, etc.
-            // Pour l'instant, on suppose qu'il n'y en a pas
-            // if (bande.HasRelatedData) ...
-            
-            // Règle 3 : Ne pas supprimer une bande archivée
+            // Règle 2 : Ne pas supprimer une bande archivée
             // (pour conserver l'historique)
             if (bande.Statut == Domain.Enums.StatutBande.Archivee)
             {
@@ -70,6 +66,32 @@ namespace Application.Features.Bandes.Commands.DeleteBande
                     "Impossible de supprimer une bande archivée. " +
                     "L'historique doit être conservé.");
             }
+        }
+
+        /// <summary>
+        /// Règle 3 : seule une bande sans aucune donnée rattachée peut être supprimée
+        /// (cas typique : bande créée par erreur).
+        /// Sans cette vérification, la base effaçait en cascade les suivis et les stocks,
+        /// et la suppression échouait en erreur 500 dès qu'une vente ou un achat existait.
+        /// </summary>
+        private async Task ValidateBandeVideAsync(int bandeId, CancellationToken cancellationToken)
+        {
+            var liees = await _bandeRepository.GetDonneesLieesAsync(bandeId, cancellationToken);
+
+            if (liees.EstVide)
+                return;
+
+            var details = new List<string>();
+            if (liees.NbSuivis > 0) details.Add($"{liees.NbSuivis} suivi(s) journalier(s)");
+            if (liees.NbStocks > 0) details.Add($"{liees.NbStocks} stock(s)");
+            if (liees.NbVentes > 0) details.Add($"{liees.NbVentes} vente(s)");
+            if (liees.NbAchats > 0) details.Add($"{liees.NbAchats} achat(s)");
+
+            throw new BusinessRuleException(
+                "Impossible de supprimer cette bande : elle contient " +
+                string.Join(", ", details) + ". " +
+                "Seule une bande vide (créée par erreur) peut être supprimée ; " +
+                "sinon, clôturez-la pour conserver son historique.");
         }
     }
 }

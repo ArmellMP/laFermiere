@@ -44,7 +44,12 @@ namespace Application.Features.Bandes.Interfaces
         /// Vérifie si un code de bande existe déjà.
         /// </summary>
         Task<bool> CodeExistsAsync(string code, CancellationToken cancellationToken = default);
-        
+
+        /// <summary>
+        /// Compte les suivis, stocks, ventes et achats rattachés à une bande.
+        /// </summary>
+        Task<BandeDonneesLieesDto> GetDonneesLieesAsync(int bandeId, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Récupère les statistiques des bandes.
         /// </summary>

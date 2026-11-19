@@ -36,7 +36,7 @@ namespace Application.Features.Parametres.Commands.CreateParametre
             var cleExists = await _parametreRepository.CleExistsAsync(createDto.Cle, null, cancellationToken);
             if (cleExists)
             {
-                throw new BusinessRuleException($"Un paramètre avec la clé '{createDto.Cle}' existe déjà.");
+                throw new ConflictException($"Un paramètre avec la clé '{createDto.Cle}' existe déjà.");
             }
 
             // ============================================

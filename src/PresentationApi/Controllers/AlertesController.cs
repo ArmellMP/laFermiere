@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Alertes;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Alertes.Queries.GetAllAlertes;
 using Application.Features.Alertes.Queries.GetAlerteById;
@@ -13,6 +14,7 @@ using Application.Features.Alertes.Commands.CreateAlerte;
 using Application.Features.Alertes.Commands.UpdateAlerte;
 using Application.Features.Alertes.Commands.DeleteAlerte;
 using Application.Features.Alertes.Commands.MarquerAlertes;
+using Application.Features.Alertes.Commands.GenererAlertes;
 using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
@@ -37,8 +39,10 @@ namespace PresentationApi.Controllers
         // ============================================
 
         [HttpGet]
-        [ProducesResponseType(typeof(List<AlerteResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<AlerteResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] string? typeAlerte = null,
             [FromQuery] string? niveau = null,
             [FromQuery] bool? onlyNonLues = null,
@@ -60,7 +64,7 @@ namespace PresentationApi.Controllers
 
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         [HttpGet("non-lues")]
@@ -152,6 +156,26 @@ namespace PresentationApi.Controllers
 
             var response = result.ToResponse();
             return Ok(response);
+        }
+
+        /// <summary>
+        /// Lance tout de suite la génération des alertes métier (stock faible, péremption,
+        /// bande à clôturer). La même génération tourne aussi périodiquement en tâche de fond.
+        /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
+        [HttpPost("generer")]
+        [ProducesResponseType(typeof(GenerationAlertesResponse), 200)]
+        public async Task<IActionResult> Generer()
+        {
+            var resultat = await _mediator.Send(new GenererAlertesCommand());
+
+            return Ok(new GenerationAlertesResponse
+            {
+                StockFaible = resultat.StockFaible,
+                Peremption = resultat.Peremption,
+                BandeACloturer = resultat.BandeACloturer,
+                Total = resultat.Total
+            });
         }
 
         [HttpPost("marquer")]

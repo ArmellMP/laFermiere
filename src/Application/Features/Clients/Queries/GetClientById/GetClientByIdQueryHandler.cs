@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Clients.Interfaces;
 using Application.Features.Clients.Dtos;
+using Application.Features.Ventes.Interfaces;
 using Application.Common.Mappings;
 
 namespace Application.Features.Clients.Queries.GetClientById
@@ -13,13 +14,16 @@ namespace Application.Features.Clients.Queries.GetClientById
     public class GetClientByIdQueryHandler : IRequestHandler<GetClientByIdQuery, ClientResponseDto>
     {
         private readonly IClientRepository _clientRepository;
+        private readonly IVenteRepository _venteRepository;
         private readonly ILogger<GetClientByIdQueryHandler> _logger;
 
         public GetClientByIdQueryHandler(
             IClientRepository clientRepository,
+            IVenteRepository venteRepository,
             ILogger<GetClientByIdQueryHandler> logger)
         {
             _clientRepository = clientRepository;
+            _venteRepository = venteRepository;
             _logger = logger;
         }
 
@@ -45,14 +49,11 @@ namespace Application.Features.Clients.Queries.GetClientById
             var clientDto = client.ToResponseDto();
 
             // ============================================
-            // 3. Ajouter les informations de ventes si demandé
+            // 3. Statistiques de ventes du client (une seule requête d'agrégat)
             // ============================================
-            if (request.IncludeVentes)
-            {
-                // TODO: Récupérer le nombre de ventes et le montant total
-                // clientDto.NombreVentes = await _venteRepository.GetCountByClientIdAsync(request.Id);
-                // clientDto.MontantTotalAchats = await _venteRepository.GetTotalByClientIdAsync(request.Id);
-            }
+            var (nombreVentes, montantTotal) = await _venteRepository.GetStatsByClientAsync(request.Id, cancellationToken);
+            clientDto.NombreVentes = nombreVentes;
+            clientDto.MontantTotalAchats = montantTotal;   // ce que le client nous a acheté
 
             return clientDto;
         }

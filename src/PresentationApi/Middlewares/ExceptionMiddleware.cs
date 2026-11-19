@@ -21,6 +21,36 @@ namespace PresentationApi.Middlewares
             exception is MySqlException mySqlException
             && mySqlException.SqlState == SqlStateRegleMetier;
 
+        // Erreur MySQL 1062 "Duplicate entry 'x' for key 'Email'" : une contrainte UNIQUE
+        // de la base a refusé la ligne. Ce n'est pas une panne mais un doublon -> 409.
+        // Cas couverts : doublon non vérifié par le handler (ex. deux stocks du même type
+        // pour une bande), ou deux requêtes simultanées qui passent toutes deux la vérification.
+        private static bool EstDoublon(Exception exception) =>
+            exception is MySqlException mySqlException
+            && mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry;
+
+        /// <summary>
+        /// Message lisible selon la contrainte UNIQUE en cause (voir database/schema.sql).
+        /// La valeur en double n'est pas recopiée dans la réponse.
+        /// </summary>
+        private static string MessageDoublon(Exception exception)
+        {
+            // MariaDB : "... for key 'Email'"  /  MySQL 8 : "... for key 'Utilisateurs.Email'"
+            var cle = System.Text.RegularExpressions.Regex.Match(exception.Message, @"for key '([^']+)'").Groups[1].Value;
+            cle = cle[(cle.LastIndexOf('.') + 1)..];
+
+            return cle switch
+            {
+                "Email" => "Cette adresse e-mail est déjà utilisée par un autre utilisateur.",
+                "Code" => "Une bande avec ce code existe déjà.",
+                "Cle" => "Un paramètre avec cette clé existe déjà.",
+                "idx_bande_type" => "Un stock de ce type existe déjà pour cette bande. Pour le réapprovisionner, enregistrez un achat.",
+                "idx_bande_jour" => "Un suivi journalier existe déjà pour ce jour de la bande.",
+                "idx_bande_date" => "Un suivi journalier existe déjà pour cette date.",
+                _ => "Cette donnée existe déjà."
+            };
+        }
+
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
         private readonly IWebHostEnvironment _env;
@@ -76,9 +106,11 @@ namespace PresentationApi.Middlewares
             {
                 ValidationException => (int)HttpStatusCode.BadRequest,
                 NotFoundException => (int)HttpStatusCode.NotFound,
+                ConflictException => (int)HttpStatusCode.Conflict,   // avant BusinessRuleException : elle en hérite
                 BusinessRuleException => (int)HttpStatusCode.BadRequest,
                 UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                 _ when EstRefusDeTrigger(exception) => (int)HttpStatusCode.BadRequest,
+                _ when EstDoublon(exception) => (int)HttpStatusCode.Conflict,
                 _ => (int)HttpStatusCode.InternalServerError
             };
         }
@@ -93,6 +125,7 @@ namespace PresentationApi.Middlewares
                 UnauthorizedAccessException => "Vous n'êtes pas autorisé à effectuer cette action.",
                 // Le texte du SIGNAL (MESSAGE_TEXT) est écrit pour l'utilisateur : on le renvoie tel quel
                 _ when EstRefusDeTrigger(exception) => exception.Message,
+                _ when EstDoublon(exception) => MessageDoublon(exception),
                 // Toute autre erreur : message générique, le détail reste dans les logs
                 _ => "Une erreur technique est survenue. Veuillez réessayer plus tard."
             };

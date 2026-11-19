@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Clients;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Clients.Queries.GetAllClients;
 using Application.Features.Clients.Queries.GetClientById;
@@ -43,8 +44,10 @@ namespace PresentationApi.Controllers
         /// Récupère tous les clients avec filtres optionnels.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(List<ClientResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<ClientResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] string? typeClient = null,
             [FromQuery] bool? onlyActifs = null,
             [FromQuery] string? searchTerm = null)
@@ -61,7 +64,7 @@ namespace PresentationApi.Controllers
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
 
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         /// <summary>

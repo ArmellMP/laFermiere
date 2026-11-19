@@ -33,12 +33,20 @@ namespace LaFermiere.IntegrationTests.Infrastructure
             // 1. Base propre
             await BaseDeTest.RecreerAsync();
 
+            // Pas de limite de tentatives de connexion pour l'API partagée : tous les tests
+            // se connectent depuis la même "adresse" et atteindraient vite la limite.
+            // LimitationConnexionTests vérifie la limite sur une API dédiée.
+            Environment.SetEnvironmentVariable("LimitationConnexion__TentativesMax", "0");
+
             // 2. Configuration de l'API pendant les tests, par variables d'environnement.
             //    Dans ASP.NET Core, les variables d'environnement sont lues APRÈS appsettings.json
             //    et les user-secrets : elles ont donc la priorité.
             //    "__" (deux tirets bas) = séparateur de section : ConnectionStrings:DefaultConnection.
             Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", BaseDeTest.ChaineDeConnexion());
             Environment.SetEnvironmentVariable("JwtSettings__SecretKey", CleJwtDeTest);
+            // Pas de génération d'alertes en tâche de fond : les tests la lancent eux-mêmes
+            // (POST /Alertes/generer), sans qu'une génération parallèle fausse les décomptes.
+            Environment.SetEnvironmentVariable("Alertes__IntervalleGenerationHeures", "0");
 
             // 3. L'API démarre au premier CreateClient()
             _factory = new WebApplicationFactory<Program>();
@@ -46,12 +54,14 @@ namespace LaFermiere.IntegrationTests.Infrastructure
 
         public async ValueTask DisposeAsync()
         {
+            Environment.SetEnvironmentVariable("LimitationConnexion__TentativesMax", null);
             if (_factory != null)
             {
                 await _factory.DisposeAsync();
             }
             Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
             Environment.SetEnvironmentVariable("JwtSettings__SecretKey", null);
+            Environment.SetEnvironmentVariable("Alertes__IntervalleGenerationHeures", null);
         }
 
         /// <summary>Client HTTP sans jeton (utilisateur non connecté).</summary>
