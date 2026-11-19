@@ -10,6 +10,16 @@ using Application.Common.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Vérifie au démarrage que chaque service enregistré peut être construit (repositories,
+// handlers MediatR, validateurs...) : une dépendance manquante fait échouer le lancement
+// avec un message clair, au lieu d'une erreur 500 à la première requête concernée.
+// (Remplace l'ancien bloc "DIAGNOSTIC" qui testait les repositories un par un.)
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateOnBuild = true;
+    options.ValidateScopes = true;
+});
+
 // ============================================
 // 1. CONFIGURATION DES SERVICES
 // ============================================
@@ -81,12 +91,29 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
+// CORS : quels sites web (origines) ont le droit d'appeler l'API depuis un navigateur.
+//   Développement : tout est autorisé (Swagger, front lancé en local sur n'importe quel port).
+//   Autres environnements : uniquement les origines listées dans Cors:OriginesAutorisees
+//   (appsettings.Production.json, variables d'environnement...). Liste vide = aucun site tiers.
+//   Les clients hors navigateur (Postman, application mobile, curl) ne sont pas concernés par CORS.
+var originesAutorisees = builder.Configuration
+    .GetSection("Cors:OriginesAutorisees")
+    .Get<string[]>() ?? [];
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy(PolitiqueCors, policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin();
+        }
+        else
+        {
+            policy.WithOrigins(originesAutorisees);
+        }
+
+        policy.AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
@@ -127,134 +154,6 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 var app = builder.Build();
 
 // ============================================
-// DIAGNOSTIC
-// ============================================
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    
-    try
-    {
-        var repo = services.GetRequiredService<Application.Features.Bandes.Interfaces.IBandeRepository>();
-        Console.WriteLine("✅ IBandeRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IBandeRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var stockRepo = services.GetRequiredService<Application.Features.Stocks.Interfaces.IStockRepository>();
-        Console.WriteLine("✅ IStockRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IStockRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var suiviRepo = services.GetRequiredService<Application.Features.SuivisJournaliers.Interfaces.ISuiviJournalierRepository>();
-        Console.WriteLine("✅ ISuiviJournalierRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR ISuiviJournalierRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var clientRepo = services.GetRequiredService<Application.Features.Clients.Interfaces.IClientRepository>();
-        Console.WriteLine("✅ IClientRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IClientRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var fournisseurRepo = services.GetRequiredService<Application.Features.Fournisseurs.Interfaces.IFournisseurRepository>();
-        Console.WriteLine("✅ IFournisseurRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IFournisseurRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var venteRepo = services.GetRequiredService<Application.Features.Ventes.Interfaces.IVenteRepository>();
-        Console.WriteLine("✅ IVenteRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IVenteRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var achatRepo = services.GetRequiredService<Application.Features.Achats.Interfaces.IAchatRepository>();
-        Console.WriteLine("✅ IAchatRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IAchatRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var utilisateurRepo = services.GetRequiredService<Application.Features.Utilisateurs.Interfaces.IUtilisateurRepository>();
-        Console.WriteLine("✅ IUtilisateurRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IUtilisateurRepository: {ex.Message}");
-    }
-
-    try
-    {
-        var parametreRepo = services.GetRequiredService<Application.Features.Parametres.Interfaces.IParametreRepository>();
-        Console.WriteLine("✅ IParametreRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IParametreRepository: {ex.Message}");
-    }
-
-    try
-    {
-        var alerteRepo = services.GetRequiredService<Application.Features.Alertes.Interfaces.IAlerteRepository>();
-        Console.WriteLine("✅ IAlerteRepository est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IAlerteRepository: {ex.Message}");
-    }
-    
-    try
-    {
-        var jwtService = services.GetRequiredService<IJwtService>();
-        Console.WriteLine("✅ IJwtService est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR IJwtService: {ex.Message}");
-    }
-    
-    try
-    {
-        var context = services.GetRequiredService<Infrastructure.DbContext.DapperContext.DapperContext>();
-        Console.WriteLine("✅ DapperContext est bien enregistré !");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ ERREUR DapperContext: {ex.Message}");
-    }
-}
-
-// ============================================
 // 2. PIPELINE HTTP
 // ============================================
 
@@ -272,7 +171,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors(PolitiqueCors);
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -294,4 +193,8 @@ app.Run();
 // le compilateur génère une classe Program INTERNE au projet. Cette déclaration la rend
 // publique, pour que les tests d'intégration puissent démarrer l'API en mémoire avec
 // WebApplicationFactory<Program> (tests/LaFermiere.IntegrationTests).
-public partial class Program { }
+public partial class Program
+{
+    /// <summary>Nom de la politique CORS appliquée à toute l'API.</summary>
+    private const string PolitiqueCors = "Frontend";
+}
