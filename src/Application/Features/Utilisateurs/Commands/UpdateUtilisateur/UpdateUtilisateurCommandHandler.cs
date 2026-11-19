@@ -13,13 +13,16 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
     public class UpdateUtilisateurCommandHandler : IRequestHandler<UpdateUtilisateurCommand, UtilisateurResponseDto>
     {
         private readonly IUtilisateurRepository _utilisateurRepository;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ILogger<UpdateUtilisateurCommandHandler> _logger;
 
         public UpdateUtilisateurCommandHandler(
             IUtilisateurRepository utilisateurRepository,
+            IRefreshTokenRepository refreshTokenRepository,
             ILogger<UpdateUtilisateurCommandHandler> logger)
         {
             _utilisateurRepository = utilisateurRepository;
+            _refreshTokenRepository = refreshTokenRepository;
             _logger = logger;
         }
 
@@ -37,6 +40,10 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
             {
                 throw new NotFoundException($"Utilisateur avec l'ID {updateDto.Id} non trouvé.");
             }
+
+            // Valeurs avant modification : servent à décider s'il faut fermer ses sessions (étape 4)
+            var ancienRole = existingUtilisateur.Role;
+            var etaitActif = existingUtilisateur.EstActif;
 
             // 2. Vérifier l'unicité de l'email (si changement)
             if (!string.IsNullOrEmpty(updateDto.Email) && updateDto.Email != existingUtilisateur.Email)
@@ -73,6 +80,17 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
 
             // 4. Sauvegarde
             await _utilisateurRepository.UpdateAsync(existingUtilisateur, cancellationToken);
+
+            // Mot de passe, rôle changé ou compte désactivé : toutes ses sessions sont fermées.
+            // Les refresh tokens sont révoqués ; le jeton d'accès en cours expire en 15 min au plus.
+            var motDePasseChange = !string.IsNullOrEmpty(updateDto.Password);
+            var roleChange = existingUtilisateur.Role != ancienRole;
+            var desactive = etaitActif && !existingUtilisateur.EstActif;
+            if (motDePasseChange || roleChange || desactive)
+            {
+                await _refreshTokenRepository.RevoquerToutPourUtilisateurAsync(existingUtilisateur.Id, DateTime.UtcNow, cancellationToken);
+                _logger.LogInformation("Sessions de l'utilisateur {UtilisateurId} révoquées (mot de passe, rôle ou désactivation)", existingUtilisateur.Id);
+            }
 
             _logger.LogInformation("Utilisateur {UtilisateurId} mis à jour avec succès", updateDto.Id);
 

@@ -288,6 +288,26 @@ CREATE TABLE Alertes (
 );
 
 -- ============================================
+-- TABLE: REFRESH_TOKENS (migration 004)
+-- ============================================
+-- Sessions de connexion renouvelables : voir database/migrations/004_refresh_tokens.sql.
+-- Seule l'empreinte SHA-256 du token est stockée, jamais le token lui-même.
+CREATE TABLE RefreshTokens (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    UtilisateurId INT NOT NULL,
+    TokenHash CHAR(64) NOT NULL COMMENT 'SHA-256 (hexadécimal) du refresh token',
+    FamilleId VARCHAR(36) NOT NULL COMMENT 'Session : tokens issus d''une même connexion (VARCHAR : CHAR(36) serait lu comme un Guid par MySqlConnector)',
+    ExpireLe DATETIME NOT NULL COMMENT 'UTC',
+    UtiliseLe DATETIME NULL COMMENT 'UTC, renseigné lors de la rotation',
+    RevoqueLe DATETIME NULL COMMENT 'UTC',
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_token_hash (TokenHash),
+    KEY idx_famille (FamilleId),
+    KEY idx_utilisateur (UtilisateurId),
+    FOREIGN KEY (UtilisateurId) REFERENCES Utilisateurs(Id) ON DELETE CASCADE
+);
+
+-- ============================================
 -- DONNÉES INITIALES
 -- ============================================
 -- Paramètres par défaut

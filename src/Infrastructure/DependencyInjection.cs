@@ -34,6 +34,7 @@ namespace Infrastructure
             services.AddScoped<IVenteRepository, VenteRepository>();
             services.AddScoped<IAchatRepository, AchatRepository>();
             services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IParametreRepository, ParametreRepository>();
             services.AddScoped<IAlerteRepository, AlerteRepository>();
             
