@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from 'react'
 import { api } from '../api/client'
 import type { Stock } from '../api/types'
+import { Dialogue, useConfirmer } from '../components/Confirmation'
 import { Champ, FormulairePanneau, Panneau, useEnvoi, versNombre } from '../components/Formulaire'
 import { Jauge } from '../components/Page'
 import { dateLisible, nombre } from '../outils'
@@ -33,6 +34,7 @@ export function FormulaireConsommation({
 function CorpsConsommation({ stock, onFermer, onFait }: { stock: Stock; onFermer: () => void; onFait: (stock: Stock) => void }) {
   const [quantite, setQuantite] = useState('')
   const { envoi, erreur, champs, envoyer, signaler } = useEnvoi()
+  const confirmer = useConfirmer()
   const q = versNombre(quantite) ?? 0
   const reste = Math.max(0, stock.quantiteActuelle - q)
   const unite = stock.uniteMesureLibelle
@@ -40,9 +42,23 @@ function CorpsConsommation({ stock, onFermer, onFait }: { stock: Stock; onFermer
   // Raccourcis : quantités usuelles, sans dépasser ce qui reste
   const raccourcis = [1, 5, 10, 25, 50].filter((n) => n < stock.quantiteActuelle)
 
-  const valider = () => {
+  const valider = async () => {
     if (!q || q <= 0) return signaler('quantiteConsommee', 'Indiquez la quantité utilisée.')
     if (q > stock.quantiteActuelle) return signaler('quantiteConsommee', `Il ne reste que ${nombre(stock.quantiteActuelle, 2)} ${unite}.`)
+    // Une consommation ne peut pas être annulée depuis l'application
+    const ok = await confirmer({
+      titre: 'Confirmer la consommation',
+      message: (
+        <p>
+          Retirer <strong>{nombre(q, 2)} {unite}</strong> de «&nbsp;{stock.nom}&nbsp;»&nbsp;? Il restera {nombre(reste, 2)} {unite}.
+          <br />
+          Une consommation enregistrée ne peut pas être annulée.
+        </p>
+      ),
+      libelleConfirmer: 'Oui, retirer du stock',
+      ton: 'attention',
+    })
+    if (!ok) return
     void envoyer(async () => {
       const apres = await api.post<Stock>(`/Stocks/${stock.id}/consommer`, { stockId: stock.id, quantiteConsommee: q })
       onFait(apres)
@@ -51,7 +67,7 @@ function CorpsConsommation({ stock, onFermer, onFait }: { stock: Stock; onFermer
 
   return (
     <FormulairePanneau
-      onSubmit={valider}
+      onSubmit={() => void valider()}
       erreur={erreur}
       envoi={envoi}
       libelleValider="Enregistrer la consommation"
@@ -99,7 +115,7 @@ function CorpsConsommation({ stock, onFermer, onFait }: { stock: Stock; onFermer
 }
 
 // ===========================================================================
-// Confirmation avant suppression
+// Confirmation avant suppression : pop-up au centre de l'écran
 // ===========================================================================
 export interface DemandeSuppression {
   titre: string
@@ -118,28 +134,42 @@ export function ConfirmationSuppression({
   onFermer: () => void
   onFait: () => void
 }) {
-  return (
-    <Panneau ouvert={demande !== null} onFermer={onFermer} titre={demande?.titre ?? 'Supprimer'}>
-      {demande && <CorpsSuppression key={demande.route} demande={demande} onFermer={onFermer} onFait={onFait} />}
-    </Panneau>
-  )
-}
-
-function CorpsSuppression({ demande, onFermer, onFait }: { demande: DemandeSuppression; onFermer: () => void; onFait: () => void }) {
   const { envoi, erreur, envoyer } = useEnvoi()
-  const valider = () =>
+  // L'erreur d'une suppression refusée ne doit pas réapparaître sur la suivante
+  const [route, setRoute] = useState<string | null>(null)
+  const erreurAffichee = route === demande?.route ? erreur : null
+
+  const supprimer = () => {
+    if (!demande) return
+    setRoute(demande.route)
     void envoyer(async () => {
       await api.supprimer(demande.route)
       onFait()
     })
+  }
 
   return (
-    <FormulairePanneau onSubmit={valider} erreur={erreur} envoi={envoi} libelleValider="Supprimer définitivement" onAnnuler={onFermer} danger>
-      <div className="encart-info encart-danger">
-        <strong>Cette action est définitive</strong>
-        <p>{demande.consequence ?? 'L’élément sera supprimé et ne pourra pas être récupéré.'}</p>
-      </div>
-      <div className="recap-suppression">{demande.description}</div>
-    </FormulairePanneau>
+    <Dialogue
+      ouvert={demande !== null}
+      titre={demande?.titre ?? 'Supprimer'}
+      ton="danger"
+      libelleConfirmer="Supprimer définitivement"
+      enCours={envoi}
+      libelleEnCours="Suppression"
+      erreur={erreurAffichee}
+      onConfirmer={supprimer}
+      onAnnuler={onFermer}
+    >
+      {demande && (
+        <>
+          <div className="recap-suppression">{demande.description}</div>
+          <p>
+            <strong className="texte-danger">Cette action est définitive</strong>
+            <br />
+            {demande.consequence ?? 'L’élément sera supprimé et ne pourra pas être récupéré.'}
+          </p>
+        </>
+      )}
+    </Dialogue>
   )
 }

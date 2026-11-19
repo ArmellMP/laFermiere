@@ -90,8 +90,8 @@ export function Tableau<T>({
               </th>
             ))}
             {actions && (
-              <th scope="col" className="aligne-droite">
-                <span className="sr-seulement">Actions</span>
+              <th scope="col" className="aligne-centre th-actions">
+                <span className="th-contenu">Actions</span>
               </th>
             )}
             {lien && <th aria-hidden="true" />}
@@ -147,11 +147,6 @@ export function Tableau<T>({
                   ))}
                 </div>
               </div>
-              {actions && (
-                <div className="tc-actions" onClick={(e) => e.stopPropagation()}>
-                  {actions(l)}
-                </div>
-              )}
               {parRole('detail').length > 0 && (
                 <dl className="tc-details">
                   {parRole('detail').map((c) => (
@@ -161,6 +156,12 @@ export function Tableau<T>({
                     </div>
                   ))}
                 </dl>
+              )}
+              {/* Actions en bas de la carte, après les informations */}
+              {actions && (
+                <div className="tc-actions" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  {actions(l)}
+                </div>
               )}
             </>
           )

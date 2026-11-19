@@ -1,6 +1,11 @@
-import { render, screen, within } from '@testing-library/react'
+import type { ReactElement } from 'react'
+import { render as rendre, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FormulaireAchat, FormulaireBande, FormulaireVente } from './Formulaires'
+import { FournisseurConfirmation } from '../components/Confirmation'
+
+/** Les pop-ups de confirmation ont besoin de leur fournisseur, comme dans l'application. */
+const render = (ui: ReactElement) => rendre(ui, { wrapper: FournisseurConfirmation })
 
 const bande = {
   id: 7, code: '2026-11-01-001', dateArrivee: '2026-11-01T00:00:00', nbPoussinsInit: 100, nbPoussinsActuel: 40,

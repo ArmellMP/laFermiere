@@ -2918,30 +2918,46 @@ textarea:focus {
   display: inline-flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
+/* Bouton d'action : icône + libellé (cartes du téléphone, journal) */
 .bouton-ligne {
-  min-height: 34px;
-  padding: 0 0.7rem;
-  border-radius: 9px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0 0.8rem;
+  border-radius: 10px;
   border: 1px solid var(--trait-fort);
   background: var(--surface);
   color: var(--encre-2);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s var(--ressort);
 }
 
-.bouton-ligne:hover {
-  border-color: var(--feuille);
+.bouton-ligne svg {
+  flex-shrink: 0;
   color: var(--feuille);
 }
 
+.bouton-ligne.danger svg {
+  color: var(--danger);
+}
+
+.bouton-ligne:hover {
+  border-color: var(--feuille);
+  color: var(--feuille);
+  background: color-mix(in srgb, var(--feuille) 7%, var(--surface));
+}
+
 .bouton-ligne:active {
-  transform: scale(0.94);
+  transform: scale(0.92);
 }
 
 .bouton-ligne.danger:hover {
@@ -2950,16 +2966,89 @@ textarea:focus {
   background: var(--danger-doux);
 }
 
+.bouton-ligne:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--feuille) 35%, transparent);
+  outline-offset: 2px;
+}
+
+/* Tableau (ordinateur) : colonne « Actions », boutons ronds à icône seule */
+.tableau th.th-actions {
+  text-align: center;
+}
+
 .cellule-actions {
   width: 1%;
   white-space: nowrap;
   cursor: default;
+  text-align: center;
 }
 
+.cellule-actions .boutons-ligne {
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.cellule-actions .bouton-ligne {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.cellule-actions .bouton-ligne-texte {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Bulle d'aide au survol (souris uniquement) */
+@media (hover: hover) {
+  .cellule-actions .bouton-ligne::after {
+    content: attr(data-infobulle);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 5;
+    padding: 0.3rem 0.55rem;
+    border-radius: 7px;
+    background: var(--encre);
+    color: var(--fond);
+    font-size: 0.75rem;
+    font-weight: 800;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -4px);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+
+  .cellule-actions .bouton-ligne:hover::after,
+  .cellule-actions .bouton-ligne:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Cartes du téléphone : actions en bas de la carte, séparées par un trait */
 .tc-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.7rem;
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--trait);
+}
+
+.tc-actions .boutons-ligne {
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.tc-actions .bouton-ligne {
+  flex: 1;
+  max-width: 11rem;
 }
 
 .tc-actions:empty {
@@ -2969,7 +3058,205 @@ textarea:focus {
 .frise-carte .boutons-ligne {
   display: flex;
   justify-content: flex-start;
-  margin-top: 0.65rem;
+  margin-top: 0.7rem;
+}
+
+/* =========================================================================
+   Bouton Retour (pages de détail et de saisie)
+   ========================================================================= */
+
+.entete-page-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  margin-bottom: 0.55rem;
+}
+
+.entete-page-navigation .fil-ariane {
+  margin-bottom: 0;
+}
+
+.bouton-retour {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 40px;
+  padding: 0 0.95rem 0 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--trait-fort);
+  background: var(--surface);
+  color: var(--encre);
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: var(--ombre-1);
+  transition: border-color 0.2s, color 0.2s, transform 0.2s var(--ressort);
+}
+
+.bouton-retour:hover {
+  border-color: var(--feuille);
+  color: var(--feuille);
+}
+
+.bouton-retour:hover svg {
+  transform: translateX(-3px);
+}
+
+.bouton-retour svg {
+  transition: transform 0.2s var(--ressort);
+}
+
+.bouton-retour:active {
+  transform: scale(0.95);
+}
+
+/* Barre du bas de la saisie du suivi : Annuler + Enregistrer */
+.barre-validation-boutons {
+  display: flex;
+  gap: 0.6rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.barre-validation-boutons .bouton-contour {
+  min-height: 54px;
+  padding: 0 1.1rem;
+  background: var(--surface);
+}
+
+.barre-validation-boutons .bouton-principal {
+  flex: 1;
+  margin: 0;
+}
+
+/* =========================================================================
+   Pop-up de confirmation (actions sérieuses)
+   ========================================================================= */
+
+.dialogue {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.dialogue-voile {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 20 14 / 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: dialogue-voile 0.2s ease-out;
+}
+
+.dialogue-boite {
+  position: relative;
+  width: min(100%, 460px);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.5rem 1.4rem 1.25rem;
+  border-radius: 20px;
+  background: var(--fond);
+  box-shadow: 0 30px 70px -20px rgb(0 0 0 / 0.45);
+  text-align: center;
+  animation: dialogue-entree 0.28s var(--ressort);
+}
+
+.dialogue-icone {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+}
+
+.dialogue-danger .dialogue-icone {
+  background: var(--danger-doux);
+  color: var(--danger);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--danger-doux) 55%, transparent);
+}
+
+.dialogue-attention .dialogue-icone {
+  background: var(--soleil-doux);
+  color: var(--soleil-fonce);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--soleil-doux) 55%, transparent);
+}
+
+.dialogue-boite h2 {
+  margin: 0 0 0.5rem;
+  font-family: var(--titre);
+  font-size: 1.3rem;
+  line-height: 1.25;
+}
+
+.dialogue-texte {
+  display: grid;
+  gap: 0.75rem;
+  color: var(--encre-2);
+  line-height: 1.5;
+}
+
+.dialogue-texte p {
+  margin: 0;
+}
+
+.dialogue-boite .recap-suppression {
+  text-align: left;
+}
+
+.dialogue-boite .message {
+  margin: 0.9rem 0 0;
+  text-align: left;
+}
+
+.dialogue-boutons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+
+.dialogue-boutons button {
+  min-height: 48px;
+  width: 100%;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .dialogue-boutons {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sur petit écran, l'action principale en premier, sous le pouce */
+  .dialogue-boutons .bouton-principal {
+    order: -1;
+  }
+}
+
+@keyframes dialogue-voile {
+  from { opacity: 0; }
+}
+
+@keyframes dialogue-entree {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogue-voile,
+  .dialogue-boite {
+    animation: none;
+  }
 }
 
 .sr-seulement {

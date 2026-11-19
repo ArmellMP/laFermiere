@@ -1,7 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate, useParams } from 'react-router-dom'
-import { EnTetePage } from '../components/Page'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { BoutonRetour, EnTetePage, useRevenir } from '../components/Page'
+import { laisserCelebration } from '../celebration'
+import { ABANDON_SAISIE, useConfirmer } from '../components/Confirmation'
 import { ErreurApi, api } from '../api/client'
 import type { Bande, NouveauSuivi, Suivi, TypeSoin } from '../api/types'
 import { EtatChargement, useDonnees } from '../components/Chargement'
@@ -53,7 +55,11 @@ export default function SaisieSuivi() {
   if (!donnees) {
     return (
       <main className="page page-saisie">
-        <EnTetePage miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: 'Suivi du jour' }]} titre={suiviId ? 'Modifier le suivi' : 'Suivi du jour'} />
+        <EnTetePage
+          retour={<BoutonRetour vers={`/bandes/${id}`} />}
+          miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: 'Suivi du jour' }]}
+          titre={suiviId ? 'Modifier le suivi' : 'Suivi du jour'}
+        />
         <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
       </main>
     )
@@ -63,6 +69,7 @@ export default function SaisieSuivi() {
 
 function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }) {
   const naviguer = useNavigate()
+  const location = useLocation()
   const [date, setDate] = useState(existant ? partieDate(existant.dateSuivi) : aujourdhui())
   const [morts, setMorts] = useState(existant?.nbMortalites ?? 0)
   const [cause, setCause] = useState(existant?.causeMortalite ?? '')
@@ -75,6 +82,15 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
   const [dosage, setDosage] = useState(existant?.dosage ?? '')
   const [temperature, setTemperature] = useState(versTexte(existant?.temperature))
   const [observations, setObservations] = useState(existant?.observations ?? '')
+
+  // Saisie commencée ? (comparée à l'état d'ouverture de la page)
+  const etat = JSON.stringify([date, morts, cause, pesee, poids, sujetsPeses, soin, typeSoin, produit, dosage, temperature, observations])
+  const etatInitial = useRef(etat)
+  const modifie = etat !== etatInitial.current
+  const confirmer = useConfirmer()
+  const peutQuitter = async () => !modifie || (await confirmer(ABANDON_SAISIE))
+  const retourJournal = `/bandes/${bande.id}${existant ? '?onglet=journal' : ''}`
+  const revenir = useRevenir(retourJournal)
 
   const [envoi, setEnvoi] = useState(false)
   const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null)
@@ -135,14 +151,24 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
 
     setEnvoi(true)
     try {
+      let message: string
       if (existant) {
         const { bandeId: _b, jour: _j, dateSuivi: _d, ...modifiable } = suivi
         const modifie = await api.put<Suivi>(`/SuiviJournalier/${existant.id}`, { id: existant.id, ...modifiable })
-        naviguer(`/bandes/${bande.id}?onglet=journal`, { replace: true, state: { message: `Suivi du jour ${modifie.jour} modifié` } })
-        return
+        message = `Suivi du jour ${modifie.jour} modifié`
+      } else {
+        const cree = await api.post<Suivi>('/SuiviJournalier', suivi)
+        message = `Suivi du jour ${cree.jour} enregistré !`
       }
-      const cree = await api.post<Suivi>('/SuiviJournalier', suivi)
-      naviguer(`/bandes/${bande.id}`, { replace: true, state: { message: `Suivi du jour ${cree.jour} enregistré !` } })
+      // Arrivé depuis la fiche de la bande : on y revient (même onglet, même position dans l'historique)
+      const depuisBande = (location.state as { depuisBande?: boolean } | null)?.depuisBande
+      const index = (window.history.state as { idx?: number } | null)?.idx ?? 0
+      if (depuisBande && index > 0) {
+        laisserCelebration(bande.id, message)
+        naviguer(-1)
+      } else {
+        naviguer(retourJournal, { replace: true, state: { message } })
+      }
     } catch (err) {
       if (err instanceof ErreurApi) {
         // "body" : règle sur l'ensemble du formulaire, déjà couverte par le message du champ
@@ -159,6 +185,7 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
   return (
     <main className="page page-saisie">
       <EnTetePage
+        retour={<BoutonRetour vers={retourJournal} avantRetour={peutQuitter} />}
         miettes={[
           { libelle: 'Bandes', vers: '/bandes' },
           { libelle: bande.code, vers: `/bandes/${bande.id}` },
@@ -291,9 +318,21 @@ function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }
         {/* En portail : un ancêtre animé (transform) empêcherait la barre de rester fixée au-dessus des onglets du bas. */}
         {createPortal(
           <div className="barre-validation">
-            <button className="bouton-principal" type="submit" form="formulaire-suivi" disabled={envoi}>
-              {envoi ? <span className="points">Enregistrement</span> : existant ? 'Enregistrer les modifications' : 'Enregistrer le suivi'}
-            </button>
+            <div className="barre-validation-boutons">
+              <button
+                className="bouton-contour"
+                type="button"
+                disabled={envoi}
+                onClick={async () => {
+                  if (await peutQuitter()) revenir()
+                }}
+              >
+                Annuler
+              </button>
+              <button className="bouton-principal" type="submit" form="formulaire-suivi" disabled={envoi}>
+                {envoi ? <span className="points">Enregistrement</span> : existant ? 'Enregistrer les modifications' : 'Enregistrer le suivi'}
+              </button>
+            </div>
           </div>,
           document.body,
         )}

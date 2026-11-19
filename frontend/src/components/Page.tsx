@@ -1,9 +1,9 @@
 // Briques communes à tous les écrans : même structure partout
 //   En-tête (fil d'Ariane, titre, actions) → Indicateurs → Barre d'outils → Contenu
 import { useCallback, type ReactNode } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Compteur } from './Anime'
-import { IconeChevron, IconeFermer, IconeGrille, IconeListe, IconeRecherche, IconeTri } from './Icones'
+import { IconeChevron, IconeFermer, IconeGrille, IconeListe, IconeRecherche, IconeRetour, IconeTri } from './Icones'
 
 // ---------------------------------------------------------------------------
 // État d'un écran dans l'adresse (?statut=EnCours&tri=age) : un filtre survit au
@@ -36,22 +36,56 @@ export interface Miette {
   vers?: string
 }
 
+/**
+ * « Retour » : revient à l'écran précédent (là où était l'utilisateur), sinon à `vers`
+ * quand la page a été ouverte directement (lien partagé, rechargement).
+ * `avantRetour` peut refuser le départ (ex. saisie commencée : confirmation).
+ */
+export function useRevenir(vers: string) {
+  const naviguer = useNavigate()
+  return useCallback(() => {
+    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (index > 0) naviguer(-1)
+    else naviguer(vers, { replace: true })
+  }, [naviguer, vers])
+}
+
+export function BoutonRetour({ vers, avantRetour }: { vers: string; avantRetour?: () => Promise<boolean> }) {
+  const retour = useRevenir(vers)
+  const revenir = async () => {
+    if (avantRetour && !(await avantRetour())) return
+    retour()
+  }
+  return (
+    <button type="button" className="bouton-retour" onClick={() => void revenir()}>
+      <IconeRetour taille={18} />
+      Retour
+    </button>
+  )
+}
+
 export function EnTetePage({
   miettes,
   titre,
   sousTitre,
   badge,
   actions,
+  retour,
 }: {
   miettes?: Miette[]
   titre: ReactNode
   sousTitre?: ReactNode
   badge?: ReactNode
   actions?: ReactNode
+  /** Bouton « Retour » au-dessus du titre (pages de détail et de saisie) */
+  retour?: ReactNode
 }) {
   return (
     <header className="entete-page">
-      {miettes && miettes.length > 0 && (
+      {(retour || (miettes && miettes.length > 0)) && (
+        <div className="entete-page-navigation">
+          {retour}
+          {miettes && miettes.length > 0 && (
         <nav className="fil-ariane" aria-label="Fil d’Ariane">
           {miettes.map((m, i) => (
             <span key={i} className="miette">
@@ -60,6 +94,8 @@ export function EnTetePage({
             </span>
           ))}
         </nav>
+          )}
+        </div>
       )}
       <div className="entete-page-ligne">
         <div className="entete-page-texte">

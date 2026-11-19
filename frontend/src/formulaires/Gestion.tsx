@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import type { Achat, Stock, Vente } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { useNotifier } from '../components/Formulaire'
+import { IconeCrayon, IconePoubelle, IconeVerser } from '../components/Icones'
 import { Tableau, type Colonne } from '../components/Tableau'
 import { dateLisible, monnaie, nombre } from '../outils'
 import { ConfirmationSuppression, FormulaireConsommation, type DemandeSuppression } from './Actions'
@@ -14,10 +15,28 @@ export function BoutonsLigne({ children }: { children: ReactNode }) {
   return <div className="boutons-ligne">{children}</div>
 }
 
-export function BoutonLigne({ libelle, onClick, danger = false }: { libelle: string; onClick: () => void; danger?: boolean }) {
+const ICONES = { modifier: IconeCrayon, supprimer: IconePoubelle, consommer: IconeVerser }
+
+/**
+ * Bouton d'action d'une ligne. Dans un tableau (ordinateur) : icône seule, avec une
+ * bulle d'aide au survol. Sur les cartes (téléphone, journal) : icône + libellé.
+ */
+export function BoutonLigne({
+  libelle,
+  onClick,
+  icone,
+  danger = false,
+}: {
+  libelle: string
+  onClick: () => void
+  icone: keyof typeof ICONES
+  danger?: boolean
+}) {
+  const Icone = ICONES[icone]
   return (
-    <button type="button" className={`bouton-ligne ${danger ? 'danger' : ''}`} onClick={onClick}>
-      {libelle}
+    <button type="button" className={`bouton-ligne ${danger ? 'danger' : ''}`} onClick={onClick} aria-label={libelle} data-infobulle={libelle}>
+      <Icone taille={17} />
+      <span className="bouton-ligne-texte">{libelle}</span>
     </button>
   )
 }
@@ -54,9 +73,10 @@ export function TableauVentes({ lignes, colonnes, lien, vide, onChange }: PropsT
           gere
             ? (v) => (
                 <BoutonsLigne>
-                  <BoutonLigne libelle="Modifier" onClick={() => setEdition(v)} />
+                  <BoutonLigne libelle="Modifier" icone="modifier" onClick={() => setEdition(v)} />
                   <BoutonLigne
                     libelle="Supprimer"
+                    icone="supprimer"
                     danger
                     onClick={() =>
                       setSuppression({
@@ -124,9 +144,10 @@ export function TableauAchats({ lignes, colonnes, lien, vide, onChange }: PropsT
           gere
             ? (a) => (
                 <BoutonsLigne>
-                  <BoutonLigne libelle="Modifier" onClick={() => setEdition(a)} />
+                  <BoutonLigne libelle="Modifier" icone="modifier" onClick={() => setEdition(a)} />
                   <BoutonLigne
                     libelle="Supprimer"
+                    icone="supprimer"
                     danger
                     onClick={() =>
                       setSuppression({
@@ -197,7 +218,7 @@ export function TableauStocks({ lignes, colonnes, lien, vide, onChange }: PropsT
             ? (s) =>
                 s.quantiteActuelle > 0 && !s.estPerime ? (
                   <BoutonsLigne>
-                    <BoutonLigne libelle="Consommer" onClick={() => setAConsommer(s)} />
+                    <BoutonLigne libelle="Consommer" icone="consommer" onClick={() => setAConsommer(s)} />
                   </BoutonsLigne>
                 ) : null
             : undefined
