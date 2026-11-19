@@ -154,6 +154,10 @@ builder.Services.AddLimitationConnexion(builder.Configuration);
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+// Auteur des saisies : l'utilisateur du jeton de la requête (et non une valeur envoyée par le client)
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUtilisateurCourant, PresentationApi.Security.UtilisateurCourantHttp>();
+
 var app = builder.Build();
 
 // ============================================

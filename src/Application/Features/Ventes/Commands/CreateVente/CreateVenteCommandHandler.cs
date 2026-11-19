@@ -1,3 +1,4 @@
+using Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
@@ -16,14 +17,17 @@ namespace Application.Features.Ventes.Commands.CreateVente
         private readonly IVenteRepository _venteRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IClientRepository _clientRepository;
+        private readonly IUtilisateurCourant _utilisateurCourant;
         private readonly ILogger<CreateVenteCommandHandler> _logger;
 
         public CreateVenteCommandHandler(
             IVenteRepository venteRepository,
             IBandeRepository bandeRepository,
             IClientRepository clientRepository,
+            IUtilisateurCourant utilisateurCourant,
             ILogger<CreateVenteCommandHandler> logger)
         {
+            _utilisateurCourant = utilisateurCourant;
             _venteRepository = venteRepository;
             _bandeRepository = bandeRepository;
             _clientRepository = clientRepository;
@@ -111,7 +115,7 @@ namespace Application.Features.Ventes.Commands.CreateVente
                 DatePaiement = createDto.DatePaiement,
                 Observations = createDto.Observations,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = 1 // À remplacer par l'utilisateur connecté
+                CreatedBy = _utilisateurCourant.Id // auteur réel : l'utilisateur du jeton
             };
 
             // ============================================

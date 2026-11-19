@@ -27,8 +27,11 @@ namespace PresentationApi.Mappings
             };
         }
 
-        /// <summary>UpdateAlerteRequest -> UpdateAlerteCommand (marquer lue / non lue, et par qui).</summary>
-        public static UpdateAlerteCommand ToCommand(this UpdateAlerteRequest request)
+        /// <summary>
+        /// UpdateAlerteRequest -> UpdateAlerteCommand (marquer lue / non lue).
+        /// Le lecteur est l'utilisateur connecté : request.UtilisateurId est ignoré.
+        /// </summary>
+        public static UpdateAlerteCommand ToCommand(this UpdateAlerteRequest request, int? lecteurId)
         {
             return new UpdateAlerteCommand
             {
@@ -36,7 +39,7 @@ namespace PresentationApi.Mappings
                 {
                     Id = request.Id,
                     EstLue = request.EstLue,
-                    UtilisateurId = request.UtilisateurId
+                    UtilisateurId = lecteurId
                 }
             };
         }

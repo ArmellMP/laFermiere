@@ -1,3 +1,4 @@
+using Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
@@ -19,14 +20,17 @@ namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
         private readonly ISuiviJournalierRepository _suiviRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IStockRepository _stockRepository;
+        private readonly IUtilisateurCourant _utilisateurCourant;
         private readonly ILogger<CreateSuiviCommandHandler> _logger;
 
         public CreateSuiviCommandHandler(
             ISuiviJournalierRepository suiviRepository,
             IBandeRepository bandeRepository,
             IStockRepository stockRepository,
+            IUtilisateurCourant utilisateurCourant,
             ILogger<CreateSuiviCommandHandler> logger)
         {
+            _utilisateurCourant = utilisateurCourant;
             _suiviRepository = suiviRepository;
             _bandeRepository = bandeRepository;
             _stockRepository = stockRepository;
@@ -113,7 +117,7 @@ namespace Application.Features.SuivisJournaliers.Commands.CreateSuivi
                 Temperature = createDto.Temperature,
                 Observations = createDto.Observations,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = 1 // À remplacer par l'utilisateur connecté plus tard
+                CreatedBy = _utilisateurCourant.Id // auteur réel : l'utilisateur du jeton
             };
 
             // ============================================
