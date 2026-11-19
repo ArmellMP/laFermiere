@@ -136,6 +136,19 @@ namespace Infrastructure.Repositories.BandeRepository
             return count > 0;
         }
 
+        public async Task<BandeDonneesLieesDto> GetDonneesLieesAsync(int bandeId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+                SELECT
+                    (SELECT COUNT(*) FROM SuivisJournaliers WHERE BandeId = @BandeId) AS NbSuivis,
+                    (SELECT COUNT(*) FROM Stocks            WHERE BandeId = @BandeId) AS NbStocks,
+                    (SELECT COUNT(*) FROM Ventes            WHERE BandeId = @BandeId) AS NbVentes,
+                    (SELECT COUNT(*) FROM Achats            WHERE BandeId = @BandeId) AS NbAchats";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+            return await connection.QuerySingleAsync<BandeDonneesLieesDto>(sql, new { BandeId = bandeId });
+        }
+
         public async Task<BandeStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
         {
             const string sql = @"
