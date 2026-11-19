@@ -217,5 +217,24 @@ namespace Infrastructure.Repositories
             var count = await connection.ExecuteScalarAsync<int>(sql, new { ClientId = clientId });
             return count > 0;
         }
+
+        public async Task<(int Nombre, decimal MontantTotal)> GetStatsByClientAsync(int clientId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+                SELECT COUNT(*) AS Nombre, COALESCE(SUM(MontantTotal), 0) AS MontantTotal
+                FROM Ventes
+                WHERE ClientId = @ClientId";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+            var stats = await connection.QuerySingleAsync<StatsLigne>(sql, new { ClientId = clientId });
+            return (stats.Nombre, stats.MontantTotal);
+        }
+
+        // Ligne de résultat de GetStatsByClientAsync
+        private sealed class StatsLigne
+        {
+            public int Nombre { get; set; }
+            public decimal MontantTotal { get; set; }
+        }
     }
 }

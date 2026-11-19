@@ -248,6 +248,25 @@ namespace Infrastructure.Repositories
             return count > 0;
         }
 
+        public async Task<(int Nombre, decimal MontantTotal)> GetStatsByFournisseurAsync(int fournisseurId, CancellationToken cancellationToken = default)
+        {
+            const string sql = @"
+                SELECT COUNT(*) AS Nombre, COALESCE(SUM(MontantTotal), 0) AS MontantTotal
+                FROM Achats
+                WHERE FournisseurId = @FournisseurId";
+
+            using var connection = await _context.CreateConnectionAsync(cancellationToken);
+            var stats = await connection.QuerySingleAsync<StatsLigne>(sql, new { FournisseurId = fournisseurId });
+            return (stats.Nombre, stats.MontantTotal);
+        }
+
+        // Ligne de résultat de GetStatsByFournisseurAsync
+        private sealed class StatsLigne
+        {
+            public int Nombre { get; set; }
+            public decimal MontantTotal { get; set; }
+        }
+
         public async Task<bool> HasAchatsByBandeAsync(int bandeId, CancellationToken cancellationToken = default)
         {
             const string sql = "SELECT COUNT(1) FROM Achats WHERE BandeId = @BandeId";

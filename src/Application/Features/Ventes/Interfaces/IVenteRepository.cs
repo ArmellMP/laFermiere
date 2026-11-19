@@ -12,7 +12,10 @@ namespace Application.Features.Ventes.Interfaces
         Task<IEnumerable<Vente>> GetByClientIdAsync(int clientId, CancellationToken cancellationToken = default);
         Task<IEnumerable<Vente>> GetByDateRangeAsync(DateTime dateDebut, DateTime dateFin, CancellationToken cancellationToken = default);
         Task<decimal> GetTotalVentesByBandeAsync(int bandeId, CancellationToken cancellationToken = default);
-        
+
+        /// <summary>Nombre de ventes d'un client et leur montant total (0 et 0 s'il n'en a aucune).</summary>
+        Task<(int Nombre, decimal MontantTotal)> GetStatsByClientAsync(int clientId, CancellationToken cancellationToken = default);
+
         // ==== ÉCRITURES ====
         Task<Vente> AddAsync(Vente vente, CancellationToken cancellationToken = default);
         Task UpdateAsync(Vente vente, CancellationToken cancellationToken = default);

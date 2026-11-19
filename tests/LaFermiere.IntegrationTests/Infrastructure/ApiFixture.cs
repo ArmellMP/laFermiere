@@ -44,6 +44,9 @@ namespace LaFermiere.IntegrationTests.Infrastructure
             //    "__" (deux tirets bas) = séparateur de section : ConnectionStrings:DefaultConnection.
             Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", BaseDeTest.ChaineDeConnexion());
             Environment.SetEnvironmentVariable("JwtSettings__SecretKey", CleJwtDeTest);
+            // Pas de génération d'alertes en tâche de fond : les tests la lancent eux-mêmes
+            // (POST /Alertes/generer), sans qu'une génération parallèle fausse les décomptes.
+            Environment.SetEnvironmentVariable("Alertes__IntervalleGenerationHeures", "0");
 
             // 3. L'API démarre au premier CreateClient()
             _factory = new WebApplicationFactory<Program>();
@@ -58,6 +61,7 @@ namespace LaFermiere.IntegrationTests.Infrastructure
             }
             Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
             Environment.SetEnvironmentVariable("JwtSettings__SecretKey", null);
+            Environment.SetEnvironmentVariable("Alertes__IntervalleGenerationHeures", null);
         }
 
         /// <summary>Client HTTP sans jeton (utilisateur non connecté).</summary>

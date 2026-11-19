@@ -14,6 +14,7 @@ using Application.Features.Alertes.Commands.CreateAlerte;
 using Application.Features.Alertes.Commands.UpdateAlerte;
 using Application.Features.Alertes.Commands.DeleteAlerte;
 using Application.Features.Alertes.Commands.MarquerAlertes;
+using Application.Features.Alertes.Commands.GenererAlertes;
 using PresentationApi.Mappings;
 
 namespace PresentationApi.Controllers
@@ -155,6 +156,26 @@ namespace PresentationApi.Controllers
 
             var response = result.ToResponse();
             return Ok(response);
+        }
+
+        /// <summary>
+        /// Lance tout de suite la génération des alertes métier (stock faible, péremption,
+        /// bande à clôturer). La même génération tourne aussi périodiquement en tâche de fond.
+        /// </summary>
+        [Authorize(Roles = AppRoles.AdminFermier)]
+        [HttpPost("generer")]
+        [ProducesResponseType(typeof(GenerationAlertesResponse), 200)]
+        public async Task<IActionResult> Generer()
+        {
+            var resultat = await _mediator.Send(new GenererAlertesCommand());
+
+            return Ok(new GenerationAlertesResponse
+            {
+                StockFaible = resultat.StockFaible,
+                Peremption = resultat.Peremption,
+                BandeACloturer = resultat.BandeACloturer,
+                Total = resultat.Total
+            });
         }
 
         [HttpPost("marquer")]

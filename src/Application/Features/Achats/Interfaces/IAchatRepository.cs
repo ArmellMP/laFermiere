@@ -86,5 +86,10 @@ namespace Application.Features.Achats.Interfaces
         /// Vérifie si une bande a des achats
         /// </summary>
         Task<bool> HasAchatsByBandeAsync(int bandeId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Nombre d'achats faits auprès d'un fournisseur et leur montant total (0 et 0 s'il n'y en a aucun)
+        /// </summary>
+        Task<(int Nombre, decimal MontantTotal)> GetStatsByFournisseurAsync(int fournisseurId, CancellationToken cancellationToken = default);
     }
 }

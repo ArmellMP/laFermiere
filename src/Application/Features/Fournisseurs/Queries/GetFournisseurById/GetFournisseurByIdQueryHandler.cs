@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
 using Application.Features.Fournisseurs.Interfaces;
 using Application.Features.Fournisseurs.Dtos;
+using Application.Features.Achats.Interfaces;
 using Application.Common.Mappings;
 
 namespace Application.Features.Fournisseurs.Queries.GetFournisseurById
@@ -10,13 +11,16 @@ namespace Application.Features.Fournisseurs.Queries.GetFournisseurById
     public class GetFournisseurByIdQueryHandler : IRequestHandler<GetFournisseurByIdQuery, FournisseurResponseDto>
     {
         private readonly IFournisseurRepository _fournisseurRepository;
+        private readonly IAchatRepository _achatRepository;
         private readonly ILogger<GetFournisseurByIdQueryHandler> _logger;
 
         public GetFournisseurByIdQueryHandler(
             IFournisseurRepository fournisseurRepository,
+            IAchatRepository achatRepository,
             ILogger<GetFournisseurByIdQueryHandler> logger)
         {
             _fournisseurRepository = fournisseurRepository;
+            _achatRepository = achatRepository;
             _logger = logger;
         }
 
@@ -35,12 +39,10 @@ namespace Application.Features.Fournisseurs.Queries.GetFournisseurById
 
             var dto = fournisseur.ToResponseDto();
 
-            if (request.IncludeAchats)
-            {
-                // TODO: Récupérer les achats quand l'entité sera créée
-                // dto.NombreAchats = await _achatRepository.GetCountByFournisseurIdAsync(request.Id);
-                // dto.MontantTotalAchats = await _achatRepository.GetTotalByFournisseurIdAsync(request.Id);
-            }
+            // Statistiques d'achats auprès de ce fournisseur (une seule requête d'agrégat)
+            var (nombreAchats, montantTotal) = await _achatRepository.GetStatsByFournisseurAsync(request.Id, cancellationToken);
+            dto.NombreAchats = nombreAchats;
+            dto.MontantTotalAchats = montantTotal;
 
             return dto;
         }

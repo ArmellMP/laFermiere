@@ -9,10 +9,5 @@ namespace Application.Features.Clients.Queries.GetClientById
     public record GetClientByIdQuery : IRequest<ClientResponseDto>
     {
         public int Id { get; init; }
-        
-        /// <summary>
-        /// Inclure les informations de ventes (optionnel)
-        /// </summary>
-        public bool IncludeVentes { get; init; }
     }
 }
