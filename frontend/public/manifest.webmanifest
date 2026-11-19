@@ -1,0 +1,13 @@
+{
+  "name": "La Fermière",
+  "short_name": "Fermière",
+  "description": "Suivi des bandes de poulets : effectifs, mortalités, pesées et soins.",
+  "lang": "fr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f2e7",
+  "theme_color": "#0d4a2c",
+  "icons": [
+    { "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
