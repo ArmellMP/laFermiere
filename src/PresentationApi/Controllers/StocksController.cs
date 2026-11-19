@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Stocks;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Stocks.Queries.GetAllStocks;
 using Application.Features.Stocks.Queries.GetStockById;
@@ -41,8 +42,10 @@ namespace PresentationApi.Controllers
         /// Récupère tous les stocks avec filtres optionnels.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(List<StockResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<StockResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] string? type = null,
             [FromQuery] int? fournisseurId = null,
             [FromQuery] bool onlyEnAlerte = false,
@@ -61,7 +64,7 @@ namespace PresentationApi.Controllers
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
             
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         /// <summary>

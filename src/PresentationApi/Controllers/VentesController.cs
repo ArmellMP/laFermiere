@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using PresentationApi.Models.Requests.Ventes;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Ventes.Queries.GetAllVentes;
 using Application.Features.Ventes.Queries.GetVenteById;
@@ -38,8 +39,10 @@ namespace PresentationApi.Controllers
         // ============================================
 
         [HttpGet]
-        [ProducesResponseType(typeof(List<VenteResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<VenteResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] int? bandeId = null,
             [FromQuery] int? clientId = null,
             [FromQuery] string? typeVente = null,
@@ -61,7 +64,7 @@ namespace PresentationApi.Controllers
 
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         [HttpGet("{id}")]

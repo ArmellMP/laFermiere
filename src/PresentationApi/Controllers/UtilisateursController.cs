@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using PresentationApi.Models.Requests.Utilisateurs;
+using PresentationApi.Models.Requests;
 using PresentationApi.Models.Responses;
 using Application.Features.Utilisateurs.Queries.GetAllUtilisateurs;
 using Application.Features.Utilisateurs.Queries.GetUtilisateurById;
@@ -36,8 +37,10 @@ namespace PresentationApi.Controllers
         // ============================================
 
         [HttpGet]
-        [ProducesResponseType(typeof(List<UtilisateurResponse>), 200)]
+        [ProducesResponseType(typeof(PageResponse<UtilisateurResponse>), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetAll(
+            [FromQuery] PaginationRequest pagination,
             [FromQuery] string? role = null,
             [FromQuery] bool? onlyActifs = null,
             [FromQuery] string? searchTerm = null)
@@ -53,7 +56,7 @@ namespace PresentationApi.Controllers
 
             var result = await _mediator.Send(query);
             var response = result.ToResponses();
-            return Ok(response);
+            return Ok(response.ToPage(pagination));
         }
 
         [HttpGet("{id}")]
