@@ -4,6 +4,7 @@ using Application.Common.Exceptions;
 using Application.Common.Security;
 using Application.Features.Utilisateurs.Interfaces;
 using Application.Features.Utilisateurs.Dtos;
+using Application.Features.Utilisateurs.Regles;
 using Domain.Entities;
 using Domain.Enums;
 using Application.Common.Mappings;
@@ -77,6 +78,14 @@ namespace Application.Features.Utilisateurs.Commands.UpdateUtilisateur
                 existingUtilisateur.EstActif = updateDto.EstActif.Value;
 
             existingUtilisateur.UpdatedAt = DateTime.UtcNow;
+
+            // Désactiver ou rétrograder le dernier administrateur actif est refusé (rien n'est enregistré)
+            var etaitAdminActif = ancienRole == RoleUtilisateur.Admin && etaitActif;
+            var resteAdminActif = existingUtilisateur.Role == RoleUtilisateur.Admin && existingUtilisateur.EstActif;
+            if (etaitAdminActif && !resteAdminActif)
+            {
+                await RegleAdministrateurs.VerifierQuUnAutreAdminResteAsync(_utilisateurRepository, existingUtilisateur.Id, cancellationToken);
+            }
 
             // 4. Sauvegarde
             await _utilisateurRepository.UpdateAsync(existingUtilisateur, cancellationToken);

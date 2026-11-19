@@ -51,6 +51,18 @@ namespace PresentationApi.Middlewares
             };
         }
 
+        // Erreur MySQL 1451 "Cannot delete or update a parent row: a foreign key constraint fails" :
+        // l'élément à supprimer est encore utilisé par d'autres lignes. Pas une panne -> 409.
+        private static bool EstReference(Exception exception) =>
+            exception is MySqlException mySqlException
+            && mySqlException.ErrorCode == MySqlErrorCode.RowIsReferenced2;
+
+        /// <summary>Message lisible selon la table dont la ligne est encore utilisée.</summary>
+        private static string MessageReference(Exception exception) =>
+            exception.Message.Contains("REFERENCES `utilisateurs`", StringComparison.OrdinalIgnoreCase)
+                ? "Cet utilisateur a déjà enregistré des données (bandes, suivis, ventes…) : son compte ne peut pas être supprimé. Désactivez-le à la place."
+                : "Cet élément est encore utilisé par d'autres données : il ne peut pas être supprimé.";
+
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
         private readonly IWebHostEnvironment _env;
@@ -111,6 +123,7 @@ namespace PresentationApi.Middlewares
                 UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                 _ when EstRefusDeTrigger(exception) => (int)HttpStatusCode.BadRequest,
                 _ when EstDoublon(exception) => (int)HttpStatusCode.Conflict,
+                _ when EstReference(exception) => (int)HttpStatusCode.Conflict,
                 _ => (int)HttpStatusCode.InternalServerError
             };
         }
@@ -126,6 +139,7 @@ namespace PresentationApi.Middlewares
                 // Le texte du SIGNAL (MESSAGE_TEXT) est écrit pour l'utilisateur : on le renvoie tel quel
                 _ when EstRefusDeTrigger(exception) => exception.Message,
                 _ when EstDoublon(exception) => MessageDoublon(exception),
+                _ when EstReference(exception) => MessageReference(exception),
                 // Toute autre erreur : message générique, le détail reste dans les logs
                 _ => "Une erreur technique est survenue. Veuillez réessayer plus tard."
             };
