@@ -110,6 +110,7 @@ export function FormulairePanneau({
   libelleValider,
   onAnnuler,
   resume,
+  danger = false,
   children,
 }: {
   onSubmit: () => void
@@ -118,6 +119,8 @@ export function FormulairePanneau({
   libelleValider: string
   onAnnuler: () => void
   resume?: ReactNode
+  /** Bouton rouge (suppression) */
+  danger?: boolean
   children: ReactNode
 }) {
   const valider = (e: FormEvent) => {
@@ -141,8 +144,8 @@ export function FormulairePanneau({
           <button type="button" className="bouton-contour" onClick={onAnnuler}>
             Annuler
           </button>
-          <button type="submit" className="bouton-principal" disabled={envoi}>
-            {envoi ? <span className="points">Enregistrement</span> : libelleValider}
+          <button type="submit" className={`bouton-principal ${danger ? 'bouton-danger' : ''}`} disabled={envoi}>
+            {envoi ? <span className="points">{danger ? 'Suppression' : 'Enregistrement'}</span> : libelleValider}
           </button>
         </div>
       </footer>

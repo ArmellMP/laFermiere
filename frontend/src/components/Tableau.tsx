@@ -27,6 +27,7 @@ export function Tableau<T>({
   triInitial,
   parPage = 20,
   vide,
+  actions,
 }: {
   lignes: T[]
   colonnes: Colonne<T>[]
@@ -35,6 +36,8 @@ export function Tableau<T>({
   triInitial?: { cle: string; sens: 'asc' | 'desc' }
   parPage?: number
   vide?: ReactNode
+  /** Boutons d'action d'une ligne (Modifier, Supprimer, Consommer…), sans ouvrir la ligne. */
+  actions?: (ligne: T) => ReactNode
 }) {
   const naviguer = useNavigate()
   const [tri, setTri] = useState(triInitial ?? null)
@@ -86,6 +89,11 @@ export function Tableau<T>({
                 </span>
               </th>
             ))}
+            {actions && (
+              <th scope="col" className="aligne-droite">
+                <span className="sr-seulement">Actions</span>
+              </th>
+            )}
             {lien && <th aria-hidden="true" />}
           </tr>
         </thead>
@@ -102,6 +110,11 @@ export function Tableau<T>({
                   {c.rendu(l)}
                 </td>
               ))}
+              {actions && (
+                <td className="cellule-actions" onClick={(e) => e.stopPropagation()}>
+                  {actions(l)}
+                </td>
+              )}
               {lien && (
                 <td className="cellule-fleche">
                   <IconeChevron taille={18} />
@@ -134,6 +147,11 @@ export function Tableau<T>({
                   ))}
                 </div>
               </div>
+              {actions && (
+                <div className="tc-actions" onClick={(e) => e.stopPropagation()}>
+                  {actions(l)}
+                </div>
+              )}
               {parRole('detail').length > 0 && (
                 <dl className="tc-details">
                   {parRole('detail').map((c) => (
@@ -149,9 +167,15 @@ export function Tableau<T>({
           return (
             <li key={cle(l)} className="apparition" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
               {lien ? (
-                <button type="button" className="tc-carte cliquable" onClick={() => naviguer(lien(l))}>
+                <div
+                  role="link"
+                  tabIndex={0}
+                  className="tc-carte cliquable"
+                  onClick={() => naviguer(lien(l))}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), naviguer(lien(l)))}
+                >
                   {contenu}
-                </button>
+                </div>
               ) : (
                 <div className="tc-carte">{contenu}</div>
               )}

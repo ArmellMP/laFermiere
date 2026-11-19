@@ -1,7 +1,7 @@
 // Formulaires de création : bande, clôture, vente, achat, client, fournisseur.
 // Chaque formulaire s'affiche dans un <Panneau>, reprend les règles de l'API
 // (valeurs autorisées, bornes) et affiche ses erreurs champ par champ.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api } from '../api/client'
 import { oublierNoms } from '../api/noms'
 import type { Achat, Bande, Client, Fournisseur, Vente } from '../api/types'
@@ -175,50 +175,85 @@ const MODES_PAIEMENT = [
   { valeur: 'Credit', libelle: 'Crédit' },
 ] as const
 
-export function FormulaireVente({ ouvert, onFermer, onCree, bandeId }: PropsFormulaire<Vente> & { bandeId?: number }) {
+/** Création (sans `existant`) ou modification d'une vente (bande et client restent fixes). */
+export function FormulaireVente({
+  ouvert,
+  onFermer,
+  onCree,
+  bandeId,
+  existant,
+}: PropsFormulaire<Vente> & { bandeId?: number; existant?: Vente }) {
   return (
-    <Panneau ouvert={ouvert} onFermer={onFermer} titre="Nouvelle vente" sousTitre="Poulets, fientes ou autres produits vendus.">
-      <CorpsVente bandeId={bandeId} onFermer={onFermer} onCree={onCree} />
+    <Panneau
+      ouvert={ouvert}
+      onFermer={onFermer}
+      titre={existant ? 'Modifier la vente' : 'Nouvelle vente'}
+      sousTitre={existant ? `${existant.clientNom ?? 'Client'} · ${existant.bandeCode ?? ''}` : 'Poulets, fientes ou autres produits vendus.'}
+    >
+      <CorpsVente key={existant?.id ?? 'nouvelle'} bandeId={existant?.bandeId ?? bandeId} existant={existant} onFermer={onFermer} onCree={onCree} />
     </Panneau>
   )
 }
 
-function CorpsVente({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 'ouvert'> & { bandeId?: number }) {
+function CorpsVente({ bandeId, existant, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 'ouvert'> & { bandeId?: number; existant?: Vente }) {
   const { donnees } = useDonnees(async () => {
     const [bandes, clients] = await Promise.all([api.liste<Bande>('/Bandes'), api.liste<Client>('/Clients')])
     return { bandes: bandes.filter((b) => estActive(b) || b.id === bandeId), clients: clients.filter((c) => c.estActif) }
   }, [bandeId])
 
+  type TypeVente = (typeof TYPES_VENTE)[number]['valeur']
+  type Mode = (typeof MODES_PAIEMENT)[number]['valeur']
   const [bande, setBande] = useState(bandeId ? String(bandeId) : '')
-  const [client, setClient] = useState('')
-  const [date, setDate] = useState(aujourdhui())
-  const [type, setType] = useState<(typeof TYPES_VENTE)[number]['valeur']>('PouletsVivants')
-  const [unite, setUnite] = useState('Unite')
-  const [quantite, setQuantite] = useState('')
-  const [prix, setPrix] = useState('')
-  const [mode, setMode] = useState<(typeof MODES_PAIEMENT)[number]['valeur']>('Especes')
-  const [paye, setPaye] = useState(true)
-  const [datePaiement, setDatePaiement] = useState(aujourdhui())
-  const [observations, setObservations] = useState('')
+  const [client, setClient] = useState(existant ? String(existant.clientId) : '')
+  const [date, setDate] = useState(existant ? partieDate(existant.dateVente) : aujourdhui())
+  const [type, setType] = useState<TypeVente>((existant?.typeVente as TypeVente) ?? 'PouletsVivants')
+  const [unite, setUnite] = useState(existant?.uniteMesure ?? 'Unite')
+  const [quantite, setQuantite] = useState(existant ? String(existant.quantite).replace('.', ',') : '')
+  const [prix, setPrix] = useState(existant ? String(existant.prixUnitaire).replace('.', ',') : '')
+  const [mode, setMode] = useState<Mode>((existant?.modePaiement as Mode) ?? 'Especes')
+  const [paye, setPaye] = useState(existant ? existant.estPaye : true)
+  const [datePaiement, setDatePaiement] = useState(existant?.datePaiement ? partieDate(existant.datePaiement) : aujourdhui())
+  const [observations, setObservations] = useState(existant?.observations ?? '')
   const { envoi, erreur, champs, envoyer, signaler } = useEnvoi()
 
-  // L'unité suit le type de produit (modifiable ensuite)
-  useEffect(() => setUnite(TYPES_VENTE.find((t) => t.valeur === type)!.unite), [type])
+  // L'unité suit le type choisi par l'utilisateur (une saisie existante garde la sienne)
+  const changerType = (t: TypeVente) => {
+    setType(t)
+    setUnite(TYPES_VENTE.find((x) => x.valeur === t)!.unite)
+  }
 
   const q = versNombre(quantite)
   const p = versNombre(prix)
   const montant = q && p ? q * p : 0
   const bandeChoisie = donnees?.bandes.find((b) => String(b.id) === bande)
   const vendPoulets = type.startsWith('Poulets')
+  // En modification, les poulets de la vente d'origine sont déjà retirés de la bande : ils redeviennent disponibles
+  const disponibles = (bandeChoisie?.nbPoussinsActuel ?? 0) + (existant?.typeVente.startsWith('Poulets') ? existant.quantite : 0)
 
   const valider = () => {
     if (!bande) return signaler('bandeId', 'Choisissez la bande.')
     if (!client) return signaler('clientId', 'Choisissez le client.')
     if (!q || q <= 0) return signaler('quantite', 'Indiquez la quantité vendue.')
     if (!p || p <= 0) return signaler('prixUnitaire', 'Indiquez le prix unitaire.')
-    if (vendPoulets && bandeChoisie && q > bandeChoisie.nbPoussinsActuel)
-      return signaler('quantite', `La bande ne compte que ${nombre(bandeChoisie.nbPoussinsActuel)} poulets.`)
+    if (vendPoulets && bandeChoisie && q > disponibles)
+      return signaler('quantite', `La bande ne compte que ${nombre(disponibles)} poulets.`)
     void envoyer(async () => {
+      if (existant) {
+        const modifiee = await api.put<Vente>(`/Ventes/${existant.id}`, {
+          id: existant.id,
+          dateVente: date,
+          typeVente: type,
+          quantite: q,
+          uniteMesure: unite,
+          prixUnitaire: p,
+          modePaiement: mode,
+          estPaye: paye,
+          datePaiement: paye ? datePaiement : null,
+          observations: observations.trim() || null,
+        })
+        onCree(modifiee)
+        return
+      }
       const vente = await api.post<Vente>('/Ventes', {
         bandeId: Number(bande),
         clientId: Number(client),
@@ -241,7 +276,7 @@ function CorpsVente({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 
       onSubmit={valider}
       erreur={erreur}
       envoi={envoi}
-      libelleValider="Enregistrer la vente"
+      libelleValider={existant ? 'Enregistrer les modifications' : 'Enregistrer la vente'}
       onAnnuler={onFermer}
       resume={
         <>
@@ -252,7 +287,7 @@ function CorpsVente({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 
     >
       <Ligne>
         <Champ libelle="Bande" obligatoire erreurs={champs.bandeId}>
-          <select value={bande} onChange={(e) => setBande(e.target.value)}>
+          <select value={bande} disabled={!!existant} onChange={(e) => setBande(e.target.value)}>
             <option value="">Choisir…</option>
             {donnees?.bandes.map((b) => (
               <option key={b.id} value={b.id}>
@@ -262,7 +297,7 @@ function CorpsVente({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 
           </select>
         </Champ>
         <Champ libelle="Client" obligatoire erreurs={champs.clientId} aide={donnees && donnees.clients.length === 0 ? 'Créez d’abord un client.' : undefined}>
-          <select value={client} onChange={(e) => setClient(e.target.value)}>
+          <select value={client} disabled={!!existant} onChange={(e) => setClient(e.target.value)}>
             <option value="">Choisir…</option>
             {donnees?.clients.map((c) => (
               <option key={c.id} value={c.id}>
@@ -274,14 +309,14 @@ function CorpsVente({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Vente>, 
       </Ligne>
 
       <span className="etiquette-champ">Produit vendu</span>
-      <Segments libelle="Produit vendu" options={TYPES_VENTE.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} valeur={type} onChange={setType} />
+      <Segments libelle="Produit vendu" options={TYPES_VENTE.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} valeur={type} onChange={changerType} />
 
       <Ligne>
         <Champ
           libelle="Quantité"
           obligatoire
           erreurs={champs.quantite}
-          aide={vendPoulets && bandeChoisie ? `${nombre(bandeChoisie.nbPoussinsActuel)} disponibles` : undefined}
+          aide={vendPoulets && bandeChoisie ? `${nombre(disponibles)} disponibles` : undefined}
         >
           <input type="text" inputMode="decimal" value={quantite} onChange={(e) => setQuantite(e.target.value)} placeholder="Ex. : 20" />
         </Champ>
@@ -338,35 +373,53 @@ const TYPES_ACHAT = [
 
 const LIBELLE_UNITE: Record<string, string> = { Unite: 'Unité', Kg: 'Kg', L: 'Litre', Sac: 'Sac', Dose: 'Dose', Heure: 'Heure', Km: 'Km', Paquet: 'Paquet' }
 
-export function FormulaireAchat({ ouvert, onFermer, onCree, bandeId }: PropsFormulaire<Achat> & { bandeId?: number }) {
+/** Création (sans `existant`) ou modification d'un achat (fournisseur et bande restent fixes). */
+export function FormulaireAchat({
+  ouvert,
+  onFermer,
+  onCree,
+  bandeId,
+  existant,
+}: PropsFormulaire<Achat> & { bandeId?: number; existant?: Achat }) {
   return (
-    <Panneau ouvert={ouvert} onFermer={onFermer} titre="Nouvel achat" sousTitre="L’aliment, les médicaments et le matériel achetés entrent en stock.">
-      <CorpsAchat bandeId={bandeId} onFermer={onFermer} onCree={onCree} />
+    <Panneau
+      ouvert={ouvert}
+      onFermer={onFermer}
+      titre={existant ? 'Modifier l’achat' : 'Nouvel achat'}
+      sousTitre={existant ? `${existant.fournisseurNom ?? 'Fournisseur'} · ${existant.bandeCode ?? ''}` : 'L’aliment, les médicaments et le matériel achetés entrent en stock.'}
+    >
+      <CorpsAchat key={existant?.id ?? 'nouvel'} bandeId={existant?.bandeId ?? bandeId} existant={existant} onFermer={onFermer} onCree={onCree} />
     </Panneau>
   )
 }
 
-function CorpsAchat({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 'ouvert'> & { bandeId?: number }) {
+function CorpsAchat({ bandeId, existant, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 'ouvert'> & { bandeId?: number; existant?: Achat }) {
   const { donnees } = useDonnees(async () => {
     const [bandes, fournisseurs] = await Promise.all([api.liste<Bande>('/Bandes'), api.liste<Fournisseur>('/Fournisseurs')])
     return { bandes: bandes.filter((b) => estActive(b) || b.id === bandeId), fournisseurs: fournisseurs.filter((f) => f.estActif) }
   }, [bandeId])
 
+  type TypeAchat = (typeof TYPES_ACHAT)[number]['valeur']
   const [bande, setBande] = useState(bandeId ? String(bandeId) : '')
-  const [fournisseur, setFournisseur] = useState('')
-  const [type, setType] = useState<(typeof TYPES_ACHAT)[number]['valeur']>('Aliment')
-  const [unite, setUnite] = useState('Kg')
-  const [description, setDescription] = useState('')
-  const [quantite, setQuantite] = useState('')
-  const [prix, setPrix] = useState('')
-  const [date, setDate] = useState(aujourdhui())
-  const [facture, setFacture] = useState('')
-  const [recu, setRecu] = useState(true)
-  const [dateReception, setDateReception] = useState(aujourdhui())
+  const [fournisseur, setFournisseur] = useState(existant ? String(existant.fournisseurId) : '')
+  const [type, setType] = useState<TypeAchat>((existant?.typeAchat as TypeAchat) ?? 'Aliment')
+  const [unite, setUnite] = useState(existant?.uniteMesure ?? 'Kg')
+  const [description, setDescription] = useState(existant?.description ?? '')
+  const [quantite, setQuantite] = useState(existant ? String(existant.quantite).replace('.', ',') : '')
+  const [prix, setPrix] = useState(existant ? String(existant.prixUnitaire).replace('.', ',') : '')
+  const [date, setDate] = useState(existant ? partieDate(existant.dateAchat) : aujourdhui())
+  const [facture, setFacture] = useState(existant?.factureNumero ?? '')
+  const [recu, setRecu] = useState(existant ? existant.estRecu : true)
+  const [dateReception, setDateReception] = useState(existant?.dateReception ? partieDate(existant.dateReception) : aujourdhui())
   const { envoi, erreur, champs, envoyer, signaler } = useEnvoi()
 
-  const unites = TYPES_ACHAT.find((t) => t.valeur === type)!.unites
-  useEffect(() => setUnite(TYPES_ACHAT.find((t) => t.valeur === type)!.unites[0]), [type])
+  const unitesDuType: readonly string[] = TYPES_ACHAT.find((t) => t.valeur === type)!.unites
+  // Une saisie ancienne peut avoir une unité hors de la liste actuelle : elle reste proposée
+  const unites = unitesDuType.includes(unite) ? unitesDuType : [unite, ...unitesDuType]
+  const changerType = (t: TypeAchat) => {
+    setType(t)
+    setUnite(TYPES_ACHAT.find((x) => x.valeur === t)!.unites[0])
+  }
 
   const q = versNombre(quantite)
   const p = versNombre(prix)
@@ -378,6 +431,21 @@ function CorpsAchat({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 
     if (!q || q <= 0) return signaler('quantite', 'Indiquez la quantité achetée.')
     if (!p || p <= 0) return signaler('prixUnitaire', 'Indiquez le prix unitaire.')
     void envoyer(async () => {
+      if (existant) {
+        const modifie = await api.put<Achat>(`/Achats/${existant.id}`, {
+          id: existant.id,
+          dateAchat: date,
+          typeAchat: type,
+          description: description.trim() || null,
+          quantite: q,
+          uniteMesure: unite,
+          prixUnitaire: p,
+          factureNumero: facture.trim() || null,
+          dateReception: recu ? dateReception : null,
+        })
+        onCree(modifie)
+        return
+      }
       const achat = await api.post<Achat>('/Achats', {
         fournisseurId: Number(fournisseur),
         bandeId: Number(bande),
@@ -399,7 +467,7 @@ function CorpsAchat({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 
       onSubmit={valider}
       erreur={erreur}
       envoi={envoi}
-      libelleValider="Enregistrer l’achat"
+      libelleValider={existant ? 'Enregistrer les modifications' : 'Enregistrer l’achat'}
       onAnnuler={onFermer}
       resume={
         <>
@@ -409,11 +477,11 @@ function CorpsAchat({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 
       }
     >
       <span className="etiquette-champ">Type d’achat</span>
-      <Segments libelle="Type d’achat" options={TYPES_ACHAT.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} valeur={type} onChange={setType} />
+      <Segments libelle="Type d’achat" options={TYPES_ACHAT.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} valeur={type} onChange={changerType} />
 
       <Ligne>
         <Champ libelle="Fournisseur" obligatoire erreurs={champs.fournisseurId} aide={donnees && donnees.fournisseurs.length === 0 ? 'Créez d’abord un fournisseur.' : undefined}>
-          <select value={fournisseur} onChange={(e) => setFournisseur(e.target.value)}>
+          <select value={fournisseur} disabled={!!existant} onChange={(e) => setFournisseur(e.target.value)}>
             <option value="">Choisir…</option>
             {donnees?.fournisseurs.map((f) => (
               <option key={f.id} value={f.id}>
@@ -423,7 +491,7 @@ function CorpsAchat({ bandeId, onFermer, onCree }: Omit<PropsFormulaire<Achat>, 
           </select>
         </Champ>
         <Champ libelle="Pour la bande" obligatoire erreurs={champs.bandeId}>
-          <select value={bande} onChange={(e) => setBande(e.target.value)}>
+          <select value={bande} disabled={!!existant} onChange={(e) => setBande(e.target.value)}>
             <option value="">Choisir…</option>
             {donnees?.bandes.map((b) => (
               <option key={b.id} value={b.id}>

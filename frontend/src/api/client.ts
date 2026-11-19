@@ -127,5 +127,6 @@ export const api = {
   get: <T>(chemin: string) => requete<T>(chemin),
   post: <T>(chemin: string, corps: unknown) => requete<T>(chemin, { method: 'POST', body: JSON.stringify(corps) }),
   put: <T>(chemin: string, corps: unknown) => requete<T>(chemin, { method: 'PUT', body: JSON.stringify(corps) }),
+  supprimer: (chemin: string) => requete<void>(chemin, { method: 'DELETE' }),
   liste: listeComplete,
 }

@@ -12,6 +12,7 @@ import { EtatChargement, useDonnees } from '../components/Chargement'
 import { IconeAlerte, IconeCamion, IconePanier, IconePersonnes, IconePlus, IconeRecherche, IconeVente } from '../components/Icones'
 import { Badge, BarreOutils, EnTetePage, Indicateurs, Puces, Recherche, Vide, useEtatUrl } from '../components/Page'
 import { Tableau, type Colonne } from '../components/Tableau'
+import { TableauAchats, TableauVentes } from '../formulaires/Gestion'
 import { aujourdhui, monnaie, monnaieCompacte, nombre, normaliser } from '../outils'
 
 const moisCourant = () => aujourdhui().slice(0, 7)
@@ -99,13 +100,12 @@ export function Ventes() {
           <p className="resultat-compte">
             {filtrees.length} vente{filtrees.length > 1 ? 's' : ''} · <strong>{monnaie(filtrees.reduce((s, v) => s + v.montantTotal, 0))}</strong>
           </p>
-          <Tableau
+          <TableauVentes
             lignes={filtrees}
             colonnes={colonnesVente}
-            cle={(v) => v.id}
             lien={(v) => `/bandes/${v.bandeId}?onglet=ventes`}
-            triInitial={{ cle: 'date', sens: 'desc' }}
             vide={<Vide icone={<IconeVente taille={28} />} titre="Aucune vente" texte="Aucune vente ne correspond à ces filtres." />}
+            onChange={() => void recharger()}
           />
         </>
       )}
@@ -178,13 +178,12 @@ export function Achats() {
           <p className="resultat-compte">
             {filtres.length} achat{filtres.length > 1 ? 's' : ''} · <strong>{monnaie(filtres.reduce((s, a) => s + a.montantTotal, 0))}</strong>
           </p>
-          <Tableau
+          <TableauAchats
             lignes={filtres}
             colonnes={colonnesAchat}
-            cle={(a) => a.id}
             lien={(a) => `/bandes/${a.bandeId}?onglet=achats`}
-            triInitial={{ cle: 'date', sens: 'desc' }}
             vide={<Vide icone={<IconePanier taille={28} />} titre="Aucun achat" texte="Aucun achat ne correspond à ces filtres." />}
+            onChange={() => void recharger()}
           />
         </>
       )}

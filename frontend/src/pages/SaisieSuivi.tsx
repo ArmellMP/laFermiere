@@ -32,36 +32,56 @@ function versNombre(texte: string): number | undefined {
   return t === '' ? undefined : Number(t)
 }
 
-export default function SaisieSuivi() {
-  const { id } = useParams()
-  const naviguer = useNavigate()
-  const { donnees: bande, erreur, enCours, recharger } = useDonnees(() => api.get<Bande>(`/Bandes/${id}`), [id])
+/** Nombre -> texte d'un champ (virgule décimale), vide si absent. */
+const versTexte = (n?: number | null) => (n == null ? '' : String(n).replace('.', ','))
 
-  const [date, setDate] = useState(aujourdhui())
-  const [morts, setMorts] = useState(0)
-  const [cause, setCause] = useState('')
-  const [pesee, setPesee] = useState(false)
-  const [poids, setPoids] = useState('')
-  const [sujetsPeses, setSujetsPeses] = useState('')
-  const [soin, setSoin] = useState(false)
-  const [typeSoin, setTypeSoin] = useState<TypeSoin>('Vaccination')
-  const [produit, setProduit] = useState('')
-  const [dosage, setDosage] = useState('')
-  const [temperature, setTemperature] = useState('')
-  const [observations, setObservations] = useState('')
+/**
+ * /bandes/:id/suivi            : saisie du suivi du jour
+ * /bandes/:id/suivi/:suiviId   : modification d'un suivi existant (la date reste fixe)
+ */
+export default function SaisieSuivi() {
+  const { id, suiviId } = useParams()
+  const { donnees, erreur, enCours, recharger } = useDonnees(async () => {
+    const [bande, suivi] = await Promise.all([
+      api.get<Bande>(`/Bandes/${id}`),
+      suiviId ? api.get<Suivi>(`/SuiviJournalier/${suiviId}`) : Promise.resolve(undefined),
+    ])
+    return { bande, suivi }
+  }, [id, suiviId])
+
+  if (!donnees) {
+    return (
+      <main className="page page-saisie">
+        <EnTetePage miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: 'Suivi du jour' }]} titre={suiviId ? 'Modifier le suivi' : 'Suivi du jour'} />
+        <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
+      </main>
+    )
+  }
+  return <FormulaireSuivi key={suiviId ?? 'nouveau'} bande={donnees.bande} existant={donnees.suivi} />
+}
+
+function FormulaireSuivi({ bande, existant }: { bande: Bande; existant?: Suivi }) {
+  const naviguer = useNavigate()
+  const [date, setDate] = useState(existant ? partieDate(existant.dateSuivi) : aujourdhui())
+  const [morts, setMorts] = useState(existant?.nbMortalites ?? 0)
+  const [cause, setCause] = useState(existant?.causeMortalite ?? '')
+  const [pesee, setPesee] = useState(existant?.poidsMoyen != null)
+  const [poids, setPoids] = useState(versTexte(existant?.poidsMoyen))
+  const [sujetsPeses, setSujetsPeses] = useState(versTexte(existant?.nbSujetsPeses))
+  const [soin, setSoin] = useState(!!existant?.typeSoin)
+  const [typeSoin, setTypeSoin] = useState<TypeSoin>(existant?.typeSoin ?? 'Vaccination')
+  const [produit, setProduit] = useState(existant?.produitUtilise ?? '')
+  const [dosage, setDosage] = useState(existant?.dosage ?? '')
+  const [temperature, setTemperature] = useState(versTexte(existant?.temperature))
+  const [observations, setObservations] = useState(existant?.observations ?? '')
 
   const [envoi, setEnvoi] = useState(false)
   const [erreurEnvoi, setErreurEnvoi] = useState<string | null>(null)
   const [erreursChamps, setErreursChamps] = useState<Record<string, string[]>>({})
 
-  if (!bande) {
-    return (
-      <main className="page page-saisie">
-        <EnTetePage miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: 'Suivi du jour' }]} titre="Suivi du jour" />
-        <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
-      </main>
-    )
-  }
+  // L'API ne sait pas effacer une valeur en modification (un champ vide = inchangé) :
+  // décocher une pesée ou un soin déjà enregistrés ne les supprimerait pas.
+  const effacementImpossible = !!existant && ((existant.poidsMoyen != null && !pesee) || (!!existant.typeSoin && !soin))
 
   const jour = jourDElevage(bande.dateArrivee, date)
   const dateArrivee = partieDate(bande.dateArrivee)
@@ -90,6 +110,13 @@ export default function SaisieSuivi() {
       return
     }
 
+    if (effacementImpossible) {
+      montrerErreurs('', {
+        body: ['Une pesée ou un soin déjà enregistré ne peut pas être effacé par une modification. Supprimez ce suivi puis saisissez-le à nouveau.'],
+      })
+      return
+    }
+
     const suivi: NouveauSuivi = {
       bandeId: bande.id,
       jour,
@@ -107,6 +134,12 @@ export default function SaisieSuivi() {
 
     setEnvoi(true)
     try {
+      if (existant) {
+        const { bandeId: _b, jour: _j, dateSuivi: _d, ...modifiable } = suivi
+        const modifie = await api.put<Suivi>(`/SuiviJournalier/${existant.id}`, { id: existant.id, ...modifiable })
+        naviguer(`/bandes/${bande.id}?onglet=journal`, { replace: true, state: { message: `Suivi du jour ${modifie.jour} modifié` } })
+        return
+      }
       const cree = await api.post<Suivi>('/SuiviJournalier', suivi)
       naviguer(`/bandes/${bande.id}`, { replace: true, state: { message: `Suivi du jour ${cree.jour} enregistré !` } })
     } catch (err) {
@@ -128,9 +161,9 @@ export default function SaisieSuivi() {
         miettes={[
           { libelle: 'Bandes', vers: '/bandes' },
           { libelle: bande.code, vers: `/bandes/${bande.id}` },
-          { libelle: 'Suivi du jour' },
+          { libelle: existant ? `Suivi du jour ${existant.jour}` : 'Suivi du jour' },
         ]}
-        titre="Suivi du jour"
+        titre={existant ? 'Modifier le suivi' : 'Suivi du jour'}
         badge={<span className="saisie-jour">Jour {jour}</span>}
         sousTitre={`${bande.code} · ${dateLisible(date)}`}
       />
@@ -145,7 +178,7 @@ export default function SaisieSuivi() {
       <form onSubmit={valider} noValidate>
         <Section icone={<IconeCalendrier />} couleur="ciel" titre="Date" retard={1}>
           <Champ erreurs={erreursChamps.dateSuivi}>
-            <input type="date" value={date} min={dateArrivee} max={aujourdhui()} required onChange={(e) => setDate(e.target.value)} />
+            <input type="date" value={date} min={dateArrivee} max={aujourdhui()} required disabled={!!existant} onChange={(e) => setDate(e.target.value)} />
           </Champ>
         </Section>
 
@@ -243,11 +276,20 @@ export default function SaisieSuivi() {
           </Champ>
         </Section>
 
+        {effacementImpossible && (
+          <div className="message message-erreur" role="alert">
+            <IconeAlerte />
+            <p>
+              Une pesée ou un soin déjà enregistré ne peut pas être effacé ici : il resterait enregistré. Pour l’enlever, supprimez ce suivi
+              depuis le journal puis saisissez-le à nouveau.
+            </p>
+          </div>
+        )}
         {erreursChamps.body && <ErreursChamp erreurs={erreursChamps.body} />}
 
         <div className="barre-validation">
           <button className="bouton-principal" type="submit" disabled={envoi}>
-            {envoi ? <span className="points">Enregistrement</span> : 'Enregistrer le suivi'}
+            {envoi ? <span className="points">Enregistrement</span> : existant ? 'Enregistrer les modifications' : 'Enregistrer le suivi'}
           </button>
         </div>
       </form>

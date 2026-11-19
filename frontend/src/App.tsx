@@ -30,6 +30,7 @@ export default function App() {
         <Route path="/bandes" element={<Bandes />} />
         <Route path="/bandes/:id" element={<BandeDetail />} />
         <Route path="/bandes/:id/suivi" element={<SaisieSuivi />} />
+        <Route path="/bandes/:id/suivi/:suiviId" element={<SaisieSuivi />} />
         <Route path="/stocks" element={<Stocks />} />
         <Route path="/ventes" element={<Reserve roles={['Admin', 'Comptable']}><Ventes /></Reserve>} />
         <Route path="/achats" element={<Reserve roles={['Admin', 'Comptable', 'Fermier']}><Achats /></Reserve>} />

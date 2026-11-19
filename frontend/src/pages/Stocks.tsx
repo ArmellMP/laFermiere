@@ -6,7 +6,8 @@ import { colonnesStock } from '../colonnes'
 import { EtatChargement, useDonnees } from '../components/Chargement'
 import { IconeAlerte, IconeCarton, IconeHorloge, IconeRecherche } from '../components/Icones'
 import { BarreOutils, EnTetePage, Indicateurs, Puces, Recherche, Vide, useEtatUrl } from '../components/Page'
-import { Tableau, type Colonne } from '../components/Tableau'
+import type { Colonne } from '../components/Tableau'
+import { TableauStocks } from '../formulaires/Gestion'
 import { monnaieCompacte, normaliser } from '../outils'
 
 type Etat = 'tous' | 'alerte' | 'perimes' | 'disponibles'
@@ -95,13 +96,12 @@ export default function Stocks() {
           <p className="resultat-compte">
             {filtres.length} article{filtres.length > 1 ? 's' : ''}
           </p>
-          <Tableau
+          <TableauStocks
             lignes={filtres}
             colonnes={colonnes}
-            cle={(s) => s.id}
             lien={(s) => `/bandes/${s.bandeId}?onglet=stocks`}
-            triInitial={{ cle: 'etat', sens: 'desc' }}
             vide={<Vide icone={<IconeRecherche taille={28} />} titre="Aucun stock ne correspond" texte="Changez de filtre ou de recherche." />}
+            onChange={() => void recharger()}
           />
         </>
       )}

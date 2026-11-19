@@ -24,7 +24,8 @@ import {
   IconeVente,
 } from '../components/Icones'
 import { Badge, Carte, EnTetePage, Indicateurs, Jauge, Onglets, Vide, useEtatUrl } from '../components/Page'
-import { Tableau } from '../components/Tableau'
+import { BoutonLigne, BoutonsLigne, TableauAchats, TableauStocks, TableauVentes } from '../formulaires/Gestion'
+import { ConfirmationSuppression, type DemandeSuppression } from '../formulaires/Actions'
 import { colonnesAchat, colonnesStock, colonnesVente } from '../colonnes'
 import { LIBELLE_STATUT, TON_STATUT, ageBande, estActive, joursRestants, tonMortalite } from '../metier'
 import { DUREE_CYCLE, aujourdhui, dateLisible, monnaie, nombre, partieDate } from '../outils'
@@ -201,7 +202,14 @@ export default function BandeDetail() {
 
       <div key={onglet} className="contenu-onglet">
         {onglet === 'apercu' && <Apercu bande={bande} suivis={suivis} />}
-        {onglet === 'journal' && <Journal suivis={suivis} />}
+        {onglet === 'journal' && (
+          <Journal
+            suivis={suivis}
+            bandeId={bande.id}
+            modifiable={active && aLeRole('Admin', 'Fermier', 'Veterinaire')}
+            onChange={() => void recharger()}
+          />
+        )}
         {onglet === 'stocks' && <StocksBande bandeId={bande.id} />}
         {onglet === 'ventes' && voitVentes && <VentesBande bandeId={bande.id} peutCreer onChange={() => void recharger()} />}
         {onglet === 'achats' && voitAchats && (
@@ -290,11 +298,42 @@ function Apercu({ bande, suivis }: { bande: Bande; suivis: Suivi[] }) {
 // ---------------------------------------------------------------------------
 // Onglet Journal : frise complète des suivis
 // ---------------------------------------------------------------------------
-function Journal({ suivis }: { suivis: Suivi[] }) {
+function Journal({ suivis, bandeId, modifiable, onChange }: { suivis: Suivi[]; bandeId: number; modifiable: boolean; onChange: () => void }) {
+  const notifier = useNotifier()
+  const naviguer = useNavigate()
+  const [suppression, setSuppression] = useState<DemandeSuppression | null>(null)
+
+  const demanderSuppression = (s: Suivi) =>
+    setSuppression({
+      titre: `Supprimer le suivi du jour ${s.jour}`,
+      route: `/SuiviJournalier/${s.id}`,
+      consequence: [
+        s.nbMortalites > 0 && `Les ${s.nbMortalites} mort${s.nbMortalites > 1 ? 's' : ''} seront remis dans l’effectif de la bande.`,
+        s.quantiteConsommee && `La quantité consommée sera rendue au stock.`,
+      ]
+        .filter(Boolean)
+        .join(' ') || undefined,
+      description: (
+        <>
+          <strong>Jour {s.jour}</strong> · {dateLisible(s.dateSuivi)} · {s.nbMortalites} mort{s.nbMortalites > 1 ? 's' : ''}
+        </>
+      ),
+    })
+
   if (suivis.length === 0) {
     return <Vide icone={<IconeNote taille={28} />} titre="Journal vide" texte="Le premier suivi journalier apparaîtra ici." />
   }
   return (
+    <>
+    <ConfirmationSuppression
+      demande={suppression}
+      onFermer={() => setSuppression(null)}
+      onFait={() => {
+        setSuppression(null)
+        notifier('Suivi supprimé')
+        onChange()
+      }}
+    />
     <ol className="frise">
       {suivis.map((s, i) => (
         <li key={s.id} className="frise-element apparition" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
@@ -331,6 +370,12 @@ function Journal({ suivis }: { suivis: Suivi[] }) {
                 </Badge>
               )}
             </div>
+            {modifiable && (
+              <BoutonsLigne>
+                <BoutonLigne libelle="Modifier" onClick={() => naviguer(`/bandes/${bandeId}/suivi/${s.id}`)} />
+                <BoutonLigne libelle="Supprimer" danger onClick={() => demanderSuppression(s)} />
+              </BoutonsLigne>
+            )}
             {(s.causeMortalite || s.produitUtilise || s.observations) && (
               <p className="frise-texte">
                 {[s.causeMortalite && `Cause : ${s.causeMortalite}`, s.produitUtilise && `${s.produitUtilise}${s.dosage ? ` (${s.dosage})` : ''}`, s.observations]
@@ -342,6 +387,7 @@ function Journal({ suivis }: { suivis: Suivi[] }) {
         </li>
       ))}
     </ol>
+    </>
   )
 }
 
@@ -353,12 +399,11 @@ function StocksBande({ bandeId }: { bandeId: number }) {
   const { donnees, erreur, enCours, recharger } = useDonnees(() => api.get<Stock[]>(`/Stocks/bande/${bandeId}`), [bandeId])
   if (!donnees) return <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} />
   return (
-    <Tableau
+    <TableauStocks
       lignes={donnees}
       colonnes={colonnesStock}
-      cle={(s) => s.id}
-      triInitial={{ cle: 'etat', sens: 'desc' }}
       vide={<Vide icone={<IconeCarton taille={28} />} titre="Aucun stock pour cette bande" texte="Les achats d’aliment et de médicaments créent les stocks." />}
+      onChange={() => void recharger()}
     />
   )
 }
@@ -381,12 +426,14 @@ function VentesBande({ bandeId, peutCreer, onChange }: { bandeId: number; peutCr
           </button>
         )}
       </div>
-      <Tableau
+      <TableauVentes
         lignes={donnees}
         colonnes={colonnesVente.filter((c) => c.cle !== 'bande')}
-        cle={(v) => v.id}
-        triInitial={{ cle: 'date', sens: 'desc' }}
         vide={<Vide icone={<IconeVente taille={28} />} titre="Aucune vente pour cette bande" />}
+        onChange={() => {
+          void recharger()
+          onChange()
+        }}
       />
       <FormulaireVente
         bandeId={bandeId}
@@ -421,12 +468,14 @@ function AchatsBande({ bandeId, peutCreer, onChange }: { bandeId: number; peutCr
           </button>
         )}
       </div>
-      <Tableau
+      <TableauAchats
         lignes={donnees}
         colonnes={colonnesAchat.filter((c) => c.cle !== 'bande')}
-        cle={(a) => a.id}
-        triInitial={{ cle: 'date', sens: 'desc' }}
         vide={<Vide icone={<IconePanier taille={28} />} titre="Aucun achat pour cette bande" />}
+        onChange={() => {
+          void recharger()
+          onChange()
+        }}
       />
       <FormulaireAchat
         bandeId={bandeId}

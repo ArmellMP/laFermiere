@@ -53,6 +53,9 @@ export interface Suivi {
   typeSoinLibelle?: string | null
   produitUtilise?: string | null
   dosage?: string | null
+  stockConsommeId?: number | null
+  stockConsommeNom?: string | null
+  quantiteConsommee?: number | null
   temperature?: number | null
   observations?: string | null
   createurNom?: string | null
@@ -124,12 +127,15 @@ export interface Vente {
   typeVente: string
   typeVenteLibelle: string
   quantite: number
+  uniteMesure: string
   uniteMesureLibelle: string
   prixUnitaire: number
   montantTotal: number
+  modePaiement: string
   modePaiementLibelle: string
   estPaye: boolean
   datePaiement?: string | null
+  observations?: string | null
 }
 
 export interface Achat {
@@ -143,11 +149,14 @@ export interface Achat {
   typeAchatLibelle: string
   description?: string | null
   quantite: number
+  uniteMesure: string
   uniteMesureLibelle: string
   prixUnitaire: number
   montantTotal: number
   factureNumero?: string | null
+  dateReception?: string | null
   estRecu: boolean
+  observations?: string | null
 }
 
 export interface Client {

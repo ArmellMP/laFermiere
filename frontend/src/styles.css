@@ -2911,6 +2911,127 @@ textarea:focus {
 }
 
 /* =========================================================================
+   Actions sur une ligne (Modifier, Supprimer, Consommer)
+   ========================================================================= */
+
+.boutons-ligne {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.bouton-ligne {
+  min-height: 34px;
+  padding: 0 0.7rem;
+  border-radius: 9px;
+  border: 1px solid var(--trait-fort);
+  background: var(--surface);
+  color: var(--encre-2);
+  font-weight: 800;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s var(--ressort);
+}
+
+.bouton-ligne:hover {
+  border-color: var(--feuille);
+  color: var(--feuille);
+}
+
+.bouton-ligne:active {
+  transform: scale(0.94);
+}
+
+.bouton-ligne.danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-doux);
+}
+
+.cellule-actions {
+  width: 1%;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.tc-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.7rem;
+}
+
+.tc-actions:empty {
+  display: none;
+}
+
+.frise-carte .boutons-ligne {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.65rem;
+}
+
+.sr-seulement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.bouton-principal.bouton-danger {
+  background: linear-gradient(135deg, #e35b50, var(--danger));
+  box-shadow: 0 6px 16px -6px rgb(210 63 53 / 0.6);
+}
+
+.encart-info.encart-danger {
+  background: var(--danger-doux);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+.encart-info.encart-danger strong {
+  color: var(--danger);
+}
+
+.recap-suppression {
+  padding: 0.9rem 1rem;
+  border-radius: var(--rayon-s);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+}
+
+.etat-stock {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--rayon-s);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+}
+
+.etat-stock-texte {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.etat-stock .jauge {
+  height: 9px;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--fond-2);
+  color: var(--encre-douce);
+  cursor: not-allowed;
+}
+
+/* =========================================================================
    Notifications (« Vente enregistrée »)
    ========================================================================= */
 
