@@ -4,6 +4,12 @@ namespace Domain.Entities
     public class Stock
     {
         public int Id { get; set; }
+
+        // ==== INFORMATIONS LIÉES (lecture seule) ====
+        // Lues par jointure SQL dans le repository, pour l'affichage uniquement.
+        // Jamais écrites en base : la référence reste l'identifiant (BandeId...).
+        public string? BandeCode { get; set; }
+        public string? FournisseurNom { get; set; }
         public int BandeId { get; set; }
         public TypeStock Type { get; set; }
         public string Nom { get; set; } = string.Empty;

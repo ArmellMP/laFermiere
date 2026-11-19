@@ -12,8 +12,9 @@ namespace Application.Common.Mappings
         /// <summary>
         /// SuiviJournalier (entité) -> SuiviResponseDto.
         /// - TypeSoin : enum nullable -> texte, ou null s'il n'y a pas eu de soin ce jour-là
-        /// - BandeCode, StockConsommeNom, UniteMesureStock, CreateurNom, DateArriveeBande :
-        ///   non renseignés ici ; certains handlers les complètent ensuite
+        /// - BandeCode, StockConsommeNom, UniteMesureStock, CreateurNom : repris de l'entité
+        ///   (jointure SQL du repository)
+        /// - DateArriveeBande : non renseignée ici ; certains handlers la complètent ensuite
         /// - PeseeEffectuee, TypeSoinLibelle, TemperatureAvis, AgeEnJours : calculés par le DTO
         /// </summary>
         public static SuiviResponseDto ToResponseDto(this SuiviJournalier suivi)
@@ -38,7 +39,11 @@ namespace Application.Common.Mappings
                 Temperature = suivi.Temperature,
                 Observations = suivi.Observations,
                 CreatedAt = suivi.CreatedAt,
-                CreatedBy = suivi.CreatedBy
+                CreatedBy = suivi.CreatedBy,
+                BandeCode = suivi.BandeCode,
+                StockConsommeNom = suivi.StockConsommeNom,
+                UniteMesureStock = suivi.UniteMesureStock,
+                CreateurNom = suivi.CreateurNom
             };
         }
 

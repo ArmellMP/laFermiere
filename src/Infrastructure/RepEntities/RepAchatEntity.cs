@@ -55,6 +55,9 @@ namespace Infrastructure.RepEntities
             return new Achat
             {
                 Id = this.Id,
+                BandeCode = this.BandeCode,
+                FournisseurNom = this.FournisseurNom,
+                CreateurNom = this.CreateurNom,
                 FournisseurId = this.FournisseurId,
                 BandeId = this.BandeId,
                 CreatedBy = this.CreatedBy,

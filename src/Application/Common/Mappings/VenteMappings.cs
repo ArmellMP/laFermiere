@@ -13,7 +13,7 @@ namespace Application.Common.Mappings
         /// <summary>
         /// Vente (entité) -> VenteResponseDto.
         /// - TypeVente, UniteMesure, ModePaiement : enums convertis en texte + libellé lisible
-        /// - BandeCode, ClientNom, CreateurNom : non renseignés ici (null)
+        /// - BandeCode, ClientNom, CreateurNom : repris de l'entité (jointure SQL du repository)
         /// </summary>
         public static VenteResponseDto ToResponseDto(this Vente vente)
         {
@@ -36,7 +36,10 @@ namespace Application.Common.Mappings
                 DatePaiement = vente.DatePaiement,
                 Observations = vente.Observations,
                 CreatedAt = vente.CreatedAt,
-                CreatedBy = vente.CreatedBy
+                CreatedBy = vente.CreatedBy,
+                BandeCode = vente.BandeCode,
+                ClientNom = vente.ClientNom,
+                CreateurNom = vente.CreateurNom
             };
         }
 

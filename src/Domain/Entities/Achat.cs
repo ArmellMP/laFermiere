@@ -5,6 +5,13 @@ namespace Domain.Entities
     public class Achat
     {
         public int Id { get; set; }
+
+        // ==== INFORMATIONS LIÉES (lecture seule) ====
+        // Lues par jointure SQL dans le repository, pour l'affichage uniquement.
+        // Jamais écrites en base : la référence reste l'identifiant (BandeId...).
+        public string? BandeCode { get; set; }
+        public string? FournisseurNom { get; set; }
+        public string? CreateurNom { get; set; }
         
         // ==== CLÉS ÉTRANGÈRES ====
         public int FournisseurId { get; set; }
