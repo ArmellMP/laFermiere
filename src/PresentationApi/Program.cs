@@ -118,8 +118,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddHealthChecks();
 builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddLaFermiereHealthChecks();   // /health vérifie aussi la base MySQL
 
 // ============================================
 // CONFIGURATION JWT
@@ -178,7 +178,7 @@ app.UseAuthorization();
 // Tous les contrôleurs exigent un utilisateur authentifié (jeton JWT valide).
 // Exception : les actions marquées [AllowAnonymous], comme /authenticate.
 app.MapControllers().RequireAuthorization();
-app.MapHealthChecks("/health");
+app.MapLaFermiereHealthChecks();   // /health (API + base) et /health/live : voir HealthChecksExtensions
 
 app.MapGet("/", () => Results.Json(new
 {
