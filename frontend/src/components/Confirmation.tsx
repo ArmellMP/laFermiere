@@ -19,6 +19,7 @@ export function Dialogue({
   erreur,
   onConfirmer,
   onAnnuler,
+  sansAnnuler = false,
   children,
 }: {
   ouvert: boolean
@@ -31,9 +32,12 @@ export function Dialogue({
   erreur?: string | null
   onConfirmer: () => void
   onAnnuler: () => void
+  /** Simple information : un seul bouton (Échap ou clic à côté appellent onAnnuler) */
+  sansAnnuler?: boolean
   children?: ReactNode
 }) {
   const annuler = useRef<HTMLButtonElement>(null)
+  const confirmerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!ouvert) return
@@ -45,7 +49,7 @@ export function Dialogue({
     }
     // En phase de capture : le panneau éventuellement ouvert dessous ne se ferme pas en même temps
     document.addEventListener('keydown', echap, true)
-    annuler.current?.focus()
+    ;(annuler.current ?? confirmerRef.current)?.focus()
     return () => {
       document.removeEventListener('keydown', echap, true)
       precedent?.focus?.()
@@ -68,11 +72,14 @@ export function Dialogue({
             <p>{erreur}</p>
           </div>
         )}
-        <div className="dialogue-boutons">
-          <button ref={annuler} type="button" className="bouton-contour" onClick={onAnnuler} disabled={enCours}>
-            {libelleAnnuler}
-          </button>
+        <div className={`dialogue-boutons ${sansAnnuler ? 'un-seul' : ''}`}>
+          {!sansAnnuler && (
+            <button ref={annuler} type="button" className="bouton-contour" onClick={onAnnuler} disabled={enCours}>
+              {libelleAnnuler}
+            </button>
+          )}
           <button
+            ref={confirmerRef}
             type="button"
             className={`bouton-principal ${ton === 'danger' ? 'bouton-danger' : ''}`}
             onClick={onConfirmer}

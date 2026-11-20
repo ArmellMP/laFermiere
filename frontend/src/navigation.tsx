@@ -8,6 +8,7 @@ import {
   IconeCamion,
   IconeCarton,
   IconeCloche,
+  IconeCompte,
   IconePanier,
   IconePersonnes,
   IconePoussin,
@@ -52,6 +53,10 @@ export const NAVIGATION: GroupeNavigation[] = [
   {
     titre: 'Suivi',
     entrees: [{ chemin: '/alertes', libelle: 'Alertes', icone: <IconeCloche />, principale: true }],
+  },
+  {
+    titre: 'Administration',
+    entrees: [{ chemin: '/comptes', libelle: 'Comptes', icone: <IconeCompte />, roles: ['Admin'] }],
   },
 ]
 
