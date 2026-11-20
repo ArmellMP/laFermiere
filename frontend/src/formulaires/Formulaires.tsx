@@ -6,6 +6,7 @@ import { api } from '../api/client'
 import { oublierNoms } from '../api/noms'
 import type { Achat, Bande, Client, Fournisseur, Vente } from '../api/types'
 import { useDonnees } from '../components/Chargement'
+import { useConfirmer } from '../components/Confirmation'
 import { Champ, FormulairePanneau, Interrupteur, Ligne, Panneau, Segments, useEnvoi, versNombre } from '../components/Formulaire'
 import { estActive } from '../metier'
 import { aujourdhui, monnaie, nombre, partieDate } from '../outils'
@@ -71,7 +72,15 @@ export function FormulaireDemarrage({ ouvert, onFermer, onCree, bande }: PropsFo
 
 function CorpsDemarrage({ bande, onFermer, onCree }: Omit<PropsFormulaire<Bande>, 'ouvert'> & { bande: Bande }) {
   const { envoi, erreur, envoyer } = useEnvoi()
-  const valider = () =>
+  const confirmer = useConfirmer()
+  const valider = async () => {
+    const ok = await confirmer({
+      titre: `Démarrer l’élevage de ${bande.code} ?`,
+      message: 'La bande passera « En cours ». On ne peut pas la remettre en préparation ensuite.',
+      libelleConfirmer: 'Oui, démarrer',
+      ton: 'attention',
+    })
+    if (!ok) return
     void envoyer(async () => {
       const demarree = await api.put<Bande>(`/Bandes/${bande.id}`, {
         id: bande.id,
@@ -81,9 +90,10 @@ function CorpsDemarrage({ bande, onFermer, onCree }: Omit<PropsFormulaire<Bande>
       })
       onCree(demarree)
     })
+  }
 
   return (
-    <FormulairePanneau onSubmit={valider} erreur={erreur} envoi={envoi} libelleValider="Démarrer l’élevage" onAnnuler={onFermer}>
+    <FormulairePanneau onSubmit={() => void valider()} erreur={erreur} envoi={envoi} libelleValider="Démarrer l’élevage" onAnnuler={onFermer}>
       <div className="encart-info">
         <strong>Ce qui change</strong>
         <p>La bande passe au statut « En cours ». Elle pourra être clôturée en fin de cycle ; tant qu’elle est en préparation, elle ne peut pas l’être.</p>
@@ -117,8 +127,16 @@ function CorpsCloture({ bande, onFermer, onCree }: Omit<PropsFormulaire<Bande>, 
   const [date, setDate] = useState(aujourdhui())
   const [observations, setObservations] = useState('')
   const { envoi, erreur, champs, envoyer } = useEnvoi()
+  const confirmer = useConfirmer()
 
-  const valider = () =>
+  const valider = async () => {
+    const ok = await confirmer({
+      titre: `Clôturer la bande ${bande.code} ?`,
+      message: 'Fin du cycle : la bande ne recevra plus de suivi ni de vente. Cette action est définitive.',
+      libelleConfirmer: 'Oui, clôturer',
+      ton: 'danger',
+    })
+    if (!ok) return
     void envoyer(async () => {
       const cloturee = await api.post<Bande>(`/Bandes/${bande.id}/cloturer`, {
         id: bande.id,
@@ -127,9 +145,10 @@ function CorpsCloture({ bande, onFermer, onCree }: Omit<PropsFormulaire<Bande>, 
       })
       onCree(cloturee)
     })
+  }
 
   return (
-    <FormulairePanneau onSubmit={valider} erreur={erreur} envoi={envoi} libelleValider="Clôturer la bande" onAnnuler={onFermer}>
+    <FormulairePanneau onSubmit={() => void valider()} erreur={erreur} envoi={envoi} libelleValider="Clôturer la bande" onAnnuler={onFermer}>
       <div className="encart-info">
         <strong>Avant de clôturer</strong>
         <p>L’application vérifie la durée du cycle, que les suivis journaliers sont complets et que la mortalité reste acceptable. Si un point bloque, il sera indiqué ici.</p>

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { FournisseurAuth } from './auth/AuthContext'
+import { FournisseurConfirmation } from './components/Confirmation'
 import { FournisseurNotification } from './components/Formulaire'
 import '@fontsource-variable/nunito'
 import '@fontsource-variable/fraunces'
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <FournisseurAuth>
         <FournisseurNotification>
-          <App />
+          <FournisseurConfirmation>
+            <App />
+          </FournisseurConfirmation>
         </FournisseurNotification>
       </FournisseurAuth>
     </BrowserRouter>

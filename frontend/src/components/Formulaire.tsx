@@ -3,11 +3,15 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ErreurApi } from '../api/client'
+import { ABANDON_SAISIE, useConfirmer } from './Confirmation'
 import { IconeAlerte, IconeFermer } from './Icones'
 
 // ---------------------------------------------------------------------------
 // Panneau : glisse du bas (téléphone) ou de la droite (ordinateur)
+// Fermer une saisie commencée (croix, Annuler, Échap, clic à côté) demande confirmation.
 // ---------------------------------------------------------------------------
+const ContexteFermeture = createContext<(() => void) | null>(null)
+
 export function Panneau({
   ouvert,
   titre,
@@ -22,10 +26,25 @@ export function Panneau({
   children: ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const confirmer = useConfirmer()
+  const modifie = useRef(false)
+
+  useEffect(() => {
+    if (ouvert) modifie.current = false
+  }, [ouvert])
+
+  const demanderFermeture = useCallback(async () => {
+    if (modifie.current && !(await confirmer(ABANDON_SAISIE))) return
+    onFermer()
+  }, [confirmer, onFermer])
+
+  const noterSaisie = () => {
+    modifie.current = true
+  }
 
   useEffect(() => {
     if (!ouvert) return
-    const echap = (e: KeyboardEvent) => e.key === 'Escape' && onFermer()
+    const echap = (e: KeyboardEvent) => e.key === 'Escape' && void demanderFermeture()
     document.addEventListener('keydown', echap)
     document.body.style.overflow = 'hidden'
     // Place le curseur dans le premier champ, une fois le panneau ouvert,
@@ -40,25 +59,37 @@ export function Panneau({
       document.body.style.overflow = ''
       clearTimeout(minuteur)
     }
-  }, [ouvert, onFermer])
+  }, [ouvert, demanderFermeture])
 
   // Rendu à la racine du document (portail) : sinon les animations d'entrée de page
   // l'enferment sous la barre d'onglets du téléphone, qui recouvrait le bouton Enregistrer.
   return createPortal(
     <div className={`panneau ${ouvert ? 'ouvert' : ''}`} aria-hidden={!ouvert}>
-      <div className="panneau-voile" onClick={onFermer} />
-      <div className="panneau-contenu" role="dialog" aria-modal="true" aria-label={titre} ref={ref}>
+      <div className="panneau-voile" onClick={() => void demanderFermeture()} />
+      <div
+        className="panneau-contenu"
+        role="dialog"
+        aria-modal="true"
+        aria-label={titre}
+        ref={ref}
+        onInput={noterSaisie}
+        onChange={noterSaisie}
+        onClick={(e) => {
+          // Raccourcis (« 10 Kg », choix segmentés…) : boutons du corps du formulaire
+          if ((e.target as HTMLElement).closest('.formulaire-corps button')) noterSaisie()
+        }}
+      >
         <div className="panneau-poignee" aria-hidden="true" />
         <header className="panneau-entete">
           <div>
             <h2>{titre}</h2>
             {sousTitre && <p className="discret">{sousTitre}</p>}
           </div>
-          <button type="button" className="bouton-icone" onClick={onFermer} aria-label="Fermer">
+          <button type="button" className="bouton-icone" onClick={() => void demanderFermeture()} aria-label="Fermer">
             <IconeFermer />
           </button>
         </header>
-        {ouvert && children}
+        <ContexteFermeture.Provider value={() => void demanderFermeture()}>{ouvert && children}</ContexteFermeture.Provider>
       </div>
     </div>,
     document.body,
@@ -127,6 +158,8 @@ export function FormulairePanneau({
     e.preventDefault()
     onSubmit()
   }
+  // Dans un panneau, « Annuler » passe par la même vérification que la croix
+  const fermer = useContext(ContexteFermeture) ?? onAnnuler
   return (
     <form className="formulaire-panneau" onSubmit={valider} noValidate>
       <div className="formulaire-corps">
@@ -141,7 +174,7 @@ export function FormulairePanneau({
       <footer className="formulaire-pied">
         {resume && <div className="formulaire-resume">{resume}</div>}
         <div className="formulaire-boutons">
-          <button type="button" className="bouton-contour" onClick={onAnnuler}>
+          <button type="button" className="bouton-contour" onClick={fermer}>
             Annuler
           </button>
           <button type="submit" className={`bouton-principal ${danger ? 'bouton-danger' : ''}`} disabled={envoi}>

@@ -23,14 +23,16 @@ import {
   IconeThermometre,
   IconeVente,
 } from '../components/Icones'
-import { Badge, Carte, EnTetePage, Indicateurs, Jauge, Onglets, Vide, useEtatUrl } from '../components/Page'
+import { Badge, BoutonRetour, Carte, EnTetePage, Indicateurs, Jauge, Onglets, Vide, useEtatUrl } from '../components/Page'
 import { BoutonLigne, BoutonsLigne, TableauAchats, TableauStocks, TableauVentes } from '../formulaires/Gestion'
 import { ConfirmationSuppression, type DemandeSuppression } from '../formulaires/Actions'
 import { colonnesAchat, colonnesStock, colonnesVente } from '../colonnes'
 import { LIBELLE_STATUT, TON_STATUT, ageBande, estActive, joursRestants, tonMortalite } from '../metier'
+import { lireCelebration, oublierCelebration } from '../celebration'
 import { DUREE_CYCLE, aujourdhui, dateLisible, monnaie, nombre, partieDate } from '../outils'
 
 type Onglet = 'apercu' | 'journal' | 'stocks' | 'ventes' | 'achats'
+
 
 export default function BandeDetail() {
   const { id } = useParams()
@@ -38,11 +40,12 @@ export default function BandeDetail() {
   const location = useLocation()
   const naviguer = useNavigate()
   const [onglet, setOnglet] = useEtatUrl<Onglet>('onglet', 'apercu')
-  const [celebration, setCelebration] = useState(() => (location.state as { message?: string } | null)?.message ?? null)
+  const [celebration, setCelebration] = useState(() => (location.state as { message?: string } | null)?.message ?? lireCelebration(id))
 
   // Le message de réussite ne s'affiche qu'une fois (pas après un rechargement)
   useEffect(() => {
     if (!celebration) return
+    oublierCelebration(id)
     naviguer(location.pathname + location.search, { replace: true, state: null })
     const minuteur = setTimeout(() => setCelebration(null), 4500)
     return () => clearTimeout(minuteur)
@@ -61,7 +64,7 @@ export default function BandeDetail() {
   if (!donnees) {
     return (
       <main className="page">
-        <EnTetePage miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: '…' }]} titre="Chargement…" />
+        <EnTetePage retour={<BoutonRetour vers="/bandes" />} miettes={[{ libelle: 'Bandes', vers: '/bandes' }, { libelle: '…' }]} titre="Chargement…" />
         <EtatChargement enCours={enCours} erreur={erreur} recharger={recharger} squelettes={3} />
       </main>
     )
@@ -90,6 +93,7 @@ export default function BandeDetail() {
       {celebration && <Celebration message={celebration} />}
 
       <EnTetePage
+        retour={<BoutonRetour vers="/bandes" />}
         miettes={[{ libelle: 'Tableau de bord', vers: '/' }, { libelle: 'Bandes', vers: '/bandes' }, { libelle: bande.code }]}
         titre={bande.code}
         badge={
@@ -121,7 +125,7 @@ export default function BandeDetail() {
                   <IconeCoche taille={18} /> Suivi du jour {suiviDuJour.jour} fait
                 </span>
               ) : (
-                <Link to={`/bandes/${bande.id}/suivi`} className="bouton-principal">
+                <Link to={`/bandes/${bande.id}/suivi`} state={{ depuisBande: true }} className="bouton-principal">
                   <IconePlus taille={20} /> Saisir le suivi du jour
                 </Link>
               ))}
@@ -373,8 +377,8 @@ function Journal({ suivis, bandeId, modifiable, onChange }: { suivis: Suivi[]; b
             </div>
             {modifiable && (
               <BoutonsLigne>
-                <BoutonLigne libelle="Modifier" onClick={() => naviguer(`/bandes/${bandeId}/suivi/${s.id}`)} />
-                <BoutonLigne libelle="Supprimer" danger onClick={() => demanderSuppression(s)} />
+                <BoutonLigne libelle="Modifier" icone="modifier" onClick={() => naviguer(`/bandes/${bandeId}/suivi/${s.id}`, { state: { depuisBande: true } })} />
+                <BoutonLigne libelle="Supprimer" icone="supprimer" danger onClick={() => demanderSuppression(s)} />
               </BoutonsLigne>
             )}
             {(s.causeMortalite || s.produitUtilise || s.observations) && (

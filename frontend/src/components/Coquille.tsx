@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import type { Alerte } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { entreeActive, navigationPour } from '../navigation'
+import { useConfirmer } from './Confirmation'
 import { IconeCloche, IconeFermer, IconeMenu, IconeSortie } from './Icones'
 
 /**
@@ -13,6 +14,7 @@ import { IconeCloche, IconeFermer, IconeMenu, IconeSortie } from './Icones'
  */
 export default function Coquille({ children }: { children: ReactNode }) {
   const { utilisateur, deconnexion } = useAuth()
+  const confirmer = useConfirmer()
   const location = useLocation()
   const [menuOuvert, setMenuOuvert] = useState(false)
   const [nonLues, setNonLues] = useState(0)
@@ -68,7 +70,15 @@ export default function Coquille({ children }: { children: ReactNode }) {
         <strong>{utilisateur.nom}</strong>
         <span>{utilisateur.roleLibelle}</span>
       </div>
-      <button className="bouton-icone discret" onClick={() => void deconnexion()} aria-label="Se déconnecter" title="Se déconnecter">
+      <button className="bouton-icone discret" onClick={async () => {
+          const ok = await confirmer({
+            titre: 'Se déconnecter ?',
+            message: 'Il faudra saisir à nouveau votre e-mail et votre mot de passe.',
+            libelleConfirmer: 'Se déconnecter',
+            ton: 'attention',
+          })
+          if (ok) void deconnexion()
+        }} aria-label="Se déconnecter" title="Se déconnecter">
         <IconeSortie taille={20} />
       </button>
     </div>

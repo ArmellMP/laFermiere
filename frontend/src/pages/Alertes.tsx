@@ -4,6 +4,7 @@ import { ErreurApi, api } from '../api/client'
 import type { Alerte, NiveauAlerte } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { EtatChargement, useDonnees } from '../components/Chargement'
+import { useConfirmer } from '../components/Confirmation'
 import { IconeAlerte, IconeCarton, IconeCoche, IconeCloche, IconeHorloge, IconePoussin } from '../components/Icones'
 import { Badge, BarreOutils, EnTetePage, Indicateurs, Puces, Vide, useEtatUrl } from '../components/Page'
 import { TON_NIVEAU } from '../metier'
@@ -30,6 +31,7 @@ function IconeType({ type }: { type: string }) {
 
 export default function Alertes() {
   const { utilisateur } = useAuth()
+  const confirmer = useConfirmer()
   const [etat, setEtat] = useEtatUrl<Etat>('etat', 'non-lues')
   const [niveau, setNiveau] = useEtatUrl<FiltreNiveau>('niveau', 'tous')
   const [enMarquage, setEnMarquage] = useState<number | 'toutes' | null>(null)
@@ -74,7 +76,15 @@ export default function Alertes() {
         sousTitre="Stocks bas, produits périmés et bandes à clôturer, générés automatiquement."
         actions={
           nonLues.length > 0 && (
-            <button className="bouton-contour" disabled={enMarquage !== null} onClick={() => void marquer('toutes')}>
+            <button className="bouton-contour" disabled={enMarquage !== null} onClick={async () => {
+                const ok = await confirmer({
+                  titre: `Marquer ${nonLues.length} alerte${nonLues.length > 1 ? 's' : ''} comme lue${nonLues.length > 1 ? 's' : ''} ?`,
+                  message: 'Elles quitteront la liste « Non lues ». On ne peut pas les remettre en non lues.',
+                  libelleConfirmer: 'Tout marquer comme lu',
+                  ton: 'attention',
+                })
+                if (ok) void marquer('toutes')
+              }}>
               <IconeCoche taille={18} /> Tout marquer comme lu
             </button>
           )
