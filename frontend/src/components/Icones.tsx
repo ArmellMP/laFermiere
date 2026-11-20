@@ -301,3 +301,11 @@ export const IconeCopier = (p: Props) => (
     <path d="M5 15V6a2 2 0 0 1 2-2h9" />
   </Icone>
 )
+
+/** Installer l'application (téléchargement vers le téléphone) */
+export const IconeTelecharger = (p: Props) => (
+  <Icone {...p}>
+    <path d="M12 4v11M7 10l5 5 5-5" />
+    <path d="M5 20h14" />
+  </Icone>
+)

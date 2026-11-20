@@ -4,8 +4,9 @@ import { api } from '../api/client'
 import type { Alerte } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { entreeActive, navigationPour } from '../navigation'
-import { useConfirmer } from './Confirmation'
-import { IconeCloche, IconeFermer, IconeMenu, IconeSortie } from './Icones'
+import { useInstallation } from '../pwa'
+import { Dialogue, useConfirmer } from './Confirmation'
+import { IconeCloche, IconeFermer, IconeMenu, IconeSortie, IconeTelecharger } from './Icones'
 
 /**
  * Ossature de l'application connectée :
@@ -15,6 +16,8 @@ import { IconeCloche, IconeFermer, IconeMenu, IconeSortie } from './Icones'
 export default function Coquille({ children }: { children: ReactNode }) {
   const { utilisateur, deconnexion } = useAuth()
   const confirmer = useConfirmer()
+  const installation = useInstallation()
+  const [aideIos, setAideIos] = useState(false)
   const location = useLocation()
   const [menuOuvert, setMenuOuvert] = useState(false)
   const [nonLues, setNonLues] = useState(0)
@@ -63,6 +66,23 @@ export default function Coquille({ children }: { children: ReactNode }) {
     </nav>
   )
 
+  // « Installer l'application » : proposé tant qu'elle est ouverte dans le navigateur
+  const boutonInstaller = (installation.installable || installation.instructionsIos) && (
+    <button
+      type="button"
+      className="bouton-installer"
+      onClick={() => (installation.installable ? void installation.installer() : setAideIos(true))}
+    >
+      <span className="bouton-installer-icone">
+        <IconeTelecharger taille={20} />
+      </span>
+      <span>
+        Installer l’application
+        <small>Une icône sur l’écran d’accueil</small>
+      </span>
+    </button>
+  )
+
   const profil = (
     <div className="profil">
       <span className="avatar">{initiales}</span>
@@ -95,6 +115,7 @@ export default function Coquille({ children }: { children: ReactNode }) {
           </span>
         </Link>
         {liens}
+        {boutonInstaller}
         {profil}
       </aside>
 
@@ -155,9 +176,33 @@ export default function Coquille({ children }: { children: ReactNode }) {
             </button>
           </div>
           {liens}
+          {boutonInstaller}
           {profil}
         </div>
       </div>
+
+      {/* iPhone / iPad : Safari n'a pas de bouton d'installation, on explique */}
+      <Dialogue
+        ouvert={aideIos}
+        titre="Installer sur l’iPhone"
+        ton="attention"
+        libelleConfirmer="J’ai compris"
+        sansAnnuler
+        onConfirmer={() => setAideIos(false)}
+        onAnnuler={() => setAideIos(false)}
+      >
+        <ol className="etapes-ios">
+          <li>
+            Ouvrez cette page dans <strong>Safari</strong>.
+          </li>
+          <li>
+            Touchez le bouton <strong>Partager</strong> (carré avec une flèche vers le haut).
+          </li>
+          <li>
+            Choisissez <strong>Sur l’écran d’accueil</strong>, puis <strong>Ajouter</strong>.
+          </li>
+        </ol>
+      </Dialogue>
     </div>
   )
 }
