@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react'
 import type { Achat, Stock, Vente } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import { useNotifier } from '../components/Formulaire'
-import { IconeCrayon, IconePoubelle, IconeVerser } from '../components/Icones'
+import { IconeBloquer, IconeCle, IconeCrayon, IconePoubelle, IconeReactiver, IconeVerser } from '../components/Icones'
 import { Tableau, type Colonne } from '../components/Tableau'
 import { dateLisible, monnaie, nombre } from '../outils'
 import { ConfirmationSuppression, FormulaireConsommation, type DemandeSuppression } from './Actions'
@@ -15,7 +15,14 @@ export function BoutonsLigne({ children }: { children: ReactNode }) {
   return <div className="boutons-ligne">{children}</div>
 }
 
-const ICONES = { modifier: IconeCrayon, supprimer: IconePoubelle, consommer: IconeVerser }
+const ICONES = {
+  modifier: IconeCrayon,
+  supprimer: IconePoubelle,
+  consommer: IconeVerser,
+  motDePasse: IconeCle,
+  desactiver: IconeBloquer,
+  reactiver: IconeReactiver,
+}
 
 /**
  * Bouton d'action d'une ligne. Dans un tableau (ordinateur) : icône seule, avec une

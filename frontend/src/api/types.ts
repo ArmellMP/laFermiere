@@ -11,6 +11,13 @@ export interface Utilisateur {
   roleLibelle: string
 }
 
+/** Compte vu par l'administrateur (GET /Utilisateurs). */
+export interface CompteUtilisateur extends Utilisateur {
+  estActif: boolean
+  derniereConnexion?: string | null
+  createdAt: string
+}
+
 /** Réponse de /authenticate et /refresh. */
 export interface ReponseAuth {
   success: boolean

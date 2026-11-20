@@ -1692,7 +1692,13 @@ textarea:focus {
   margin: 0;
   padding: 0;
   display: grid;
+  /* minmax(0, 1fr) : une carte ne s'élargit jamais au-delà de l'écran (e-mail long…) */
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.6rem;
+}
+
+.tc-details dd {
+  overflow-wrap: anywhere;
 }
 
 .tc-carte {
@@ -3041,14 +3047,15 @@ textarea:focus {
   border-top: 1px solid var(--trait);
 }
 
+/* Grille : 2 boutons côte à côte, 4 boutons sur deux lignes, jamais de débordement */
 .tc-actions .boutons-ligne {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   width: 100%;
-  flex-wrap: nowrap;
 }
 
 .tc-actions .bouton-ligne {
-  flex: 1;
-  max-width: 11rem;
+  min-width: 0;
 }
 
 .tc-actions:empty {
@@ -3128,6 +3135,189 @@ textarea:focus {
 .barre-validation-boutons .bouton-principal {
   flex: 1;
   margin: 0;
+}
+
+/* =========================================================================
+   Comptes (administration)
+   ========================================================================= */
+
+.compte-identite {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.compte-textes {
+  display: grid;
+  min-width: 0;
+}
+
+.compte-textes strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.compte-textes .discret {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.avatar.eteint {
+  background: var(--trait-fort);
+  color: var(--encre-douce);
+}
+
+/* Choix du rôle : tuiles avec ce que le rôle permet */
+fieldset.choix-role {
+  margin: 0 0 0.9rem;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+fieldset.choix-role legend {
+  margin-bottom: 0.35rem;
+  padding: 0;
+}
+
+.choix-role-liste {
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (min-width: 520px) {
+  .choix-role-liste {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.choix-role-tuile {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid var(--trait-fort);
+  border-radius: var(--rayon-s);
+  background: var(--surface);
+  color: var(--encre);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.choix-role-tuile span {
+  color: var(--encre-douce);
+  font-weight: 600;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.choix-role-tuile:hover {
+  border-color: var(--feuille);
+}
+
+.choix-role-tuile.choisie {
+  border-color: var(--feuille);
+  background: color-mix(in srgb, var(--feuille) 8%, var(--surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--feuille) 18%, transparent);
+}
+
+fieldset.choix-role:disabled .choix-role-tuile {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+fieldset.choix-role:disabled .choix-role-tuile.choisie {
+  opacity: 1;
+}
+
+/* Mot de passe : champ + Afficher, règles cochées en direct */
+.mot-de-passe-ligne {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mot-de-passe-ligne input {
+  flex: 1;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+.mot-de-passe-ligne .bouton-contour {
+  flex: none;
+  min-height: 48px;
+}
+
+.champ-mot-de-passe .champ {
+  margin-bottom: 0.25rem;
+}
+
+.regles-mot-de-passe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--encre-douce);
+}
+
+.regles-mot-de-passe li::before {
+  content: '○';
+  margin-right: 0.35rem;
+}
+
+.regles-mot-de-passe li.ok {
+  color: var(--feuille);
+}
+
+.regles-mot-de-passe li.ok::before {
+  content: '✓';
+}
+
+/* Identifiants à transmettre */
+.identifiants {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--rayon-s);
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  text-align: left;
+}
+
+.identifiants div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.identifiants dt {
+  color: var(--encre-douce);
+  font-weight: 700;
+}
+
+.identifiants dd {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.bouton-copier {
+  justify-self: center;
+  min-height: 44px;
+}
+
+.dialogue-boutons.un-seul {
+  grid-template-columns: 1fr;
 }
 
 /* =========================================================================

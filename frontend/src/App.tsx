@@ -6,6 +6,7 @@ import Alertes from './pages/Alertes'
 import BandeDetail from './pages/BandeDetail'
 import Bandes from './pages/Bandes'
 import { Achats, Clients, Fournisseurs, Ventes } from './pages/Commerce'
+import Comptes from './pages/Comptes'
 import Connexion from './pages/Connexion'
 import SaisieSuivi from './pages/SaisieSuivi'
 import Stocks from './pages/Stocks'
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/clients" element={<Reserve roles={['Admin', 'Comptable']}><Clients /></Reserve>} />
         <Route path="/fournisseurs" element={<Reserve roles={['Admin', 'Comptable']}><Fournisseurs /></Reserve>} />
         <Route path="/alertes" element={<Alertes />} />
+        <Route path="/comptes" element={<Reserve roles={['Admin']}><Comptes /></Reserve>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Coquille>
