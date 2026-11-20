@@ -1,3 +1,4 @@
+using Application.Common.Security;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Application.Common.Exceptions;
@@ -16,14 +17,17 @@ namespace Application.Features.Achats.Commands.CreateAchat
         private readonly IAchatRepository _achatRepository;
         private readonly IBandeRepository _bandeRepository;
         private readonly IFournisseurRepository _fournisseurRepository;
+        private readonly IUtilisateurCourant _utilisateurCourant;
         private readonly ILogger<CreateAchatCommandHandler> _logger;
 
         public CreateAchatCommandHandler(
             IAchatRepository achatRepository,
             IBandeRepository bandeRepository,
             IFournisseurRepository fournisseurRepository,
+            IUtilisateurCourant utilisateurCourant,
             ILogger<CreateAchatCommandHandler> logger)
         {
+            _utilisateurCourant = utilisateurCourant;
             _achatRepository = achatRepository;
             _bandeRepository = bandeRepository;
             _fournisseurRepository = fournisseurRepository;
@@ -93,7 +97,7 @@ namespace Application.Features.Achats.Commands.CreateAchat
                 DateReception = createDto.DateReception,
                 Observations = createDto.Observations,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = 1 // À remplacer par l'utilisateur connecté
+                CreatedBy = _utilisateurCourant.Id // auteur réel : l'utilisateur du jeton
             };
 
             // ============================================

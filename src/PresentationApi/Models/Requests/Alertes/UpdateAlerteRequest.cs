@@ -9,6 +9,7 @@ namespace PresentationApi.Models.Requests.Alertes
 
         public bool? EstLue { get; set; }
 
+        /// <summary>Ignoré : l'alerte est marquée au nom de l'utilisateur connecté (son jeton).</summary>
         public int? UtilisateurId { get; set; }
     }
 }

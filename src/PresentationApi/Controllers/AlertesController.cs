@@ -1,3 +1,4 @@
+using Application.Common.Security;
 ﻿using PresentationApi.Security;
 using Application.Common.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -25,13 +26,16 @@ namespace PresentationApi.Controllers
     {
         private readonly IMediator _mediator;
         private readonly ILogger<AlertesController> _logger;
+        private readonly IUtilisateurCourant _utilisateurCourant;
 
         public AlertesController(
             IMediator mediator,
-            ILogger<AlertesController> logger)
+            ILogger<AlertesController> logger,
+            IUtilisateurCourant utilisateurCourant)
         {
             _mediator = mediator;
             _logger = logger;
+            _utilisateurCourant = utilisateurCourant;
         }
 
         // ============================================
@@ -151,7 +155,7 @@ namespace PresentationApi.Controllers
 
             _logger.LogInformation("Mise à jour de l'alerte {AlerteId}", id);
 
-            var command = request.ToCommand();
+            var command = request.ToCommand(_utilisateurCourant.Id);
             var result = await _mediator.Send(command);
 
             var response = result.ToResponse();
@@ -188,7 +192,8 @@ namespace PresentationApi.Controllers
             var command = new MarquerAlertesCommand
             {
                 AlerteIds = request.AlerteIds ?? new List<int>(),
-                UtilisateurId = request.UtilisateurId,
+                // Le lecteur est celui du jeton, pas une valeur envoyée par le client
+                UtilisateurId = _utilisateurCourant.Id ?? throw new UnauthorizedAccessException(),
                 MarquerToutes = request.MarquerToutes
             };
 
