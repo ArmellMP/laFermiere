@@ -17,6 +17,15 @@ export default defineConfig({
       '/health': 'http://localhost:5196',
     },
   },
+  // `npm run preview` : version de production (avec le service worker), même renvoi vers l'API
+  preview: {
+    host: true,
+    port: 4173,
+    proxy: {
+      '/api': 'http://localhost:5196',
+      '/health': 'http://localhost:5196',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

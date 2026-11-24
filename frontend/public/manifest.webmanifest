@@ -1,13 +1,26 @@
 {
+  "id": "/",
   "name": "La Fermière",
-  "short_name": "Fermière",
-  "description": "Suivi des bandes de poulets : effectifs, mortalités, pesées et soins.",
+  "short_name": "La Fermière",
+  "description": "Suivi des bandes de poulets : effectifs, mortalités, pesées, soins, stocks et ventes.",
   "lang": "fr",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f7f2e7",
   "theme_color": "#0d4a2c",
+  "categories": ["business", "productivity"],
   "icons": [
-    { "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Bandes", "short_name": "Bandes", "description": "Voir les bandes et saisir le suivi du jour", "url": "/bandes", "icons": [{ "src": "/icone-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Stocks", "short_name": "Stocks", "url": "/stocks", "icons": [{ "src": "/icone-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Alertes", "short_name": "Alertes", "url": "/alertes", "icons": [{ "src": "/icone-96.png", "sizes": "96x96", "type": "image/png" }] }
   ]
 }

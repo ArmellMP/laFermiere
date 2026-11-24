@@ -354,6 +354,64 @@ a {
   line-height: 22px;
 }
 
+/* « Installer l'application » : au-dessus du profil, dans la barre latérale et le menu */
+.bouton-installer {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid rgb(255 182 39 / 0.45);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgb(255 182 39 / 0.18), rgb(255 182 39 / 0.06));
+  color: #fff7e6;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s var(--ressort);
+}
+
+.bouton-installer:hover {
+  background: linear-gradient(135deg, rgb(255 182 39 / 0.28), rgb(255 182 39 / 0.1));
+}
+
+.bouton-installer:active {
+  transform: scale(0.97);
+}
+
+.bouton-installer small {
+  display: block;
+  font-weight: 600;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.bouton-installer-icone {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--soleil);
+  color: #0d3b24;
+}
+
+.bouton-installer + .profil {
+  margin-top: 0.6rem;
+}
+
+/* Aide à l'installation sur iPhone */
+.etapes-ios {
+  margin: 0;
+  padding-left: 1.4rem;
+  text-align: left;
+  display: grid;
+  gap: 0.45rem;
+}
+
 .profil {
   display: flex;
   align-items: center;
