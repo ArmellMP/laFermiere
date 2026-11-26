@@ -130,7 +130,9 @@ jobs:
         run: |
           docker compose exec -T sauvegarde bash /scripts/sauvegarder.sh --une-fois
           copie=$(ls -t sauvegardes/lafermiere-*.sql.gz | head -1)
-          zcat "$copie" | grep -q "CREATE TRIGGER" || { echo "Triggers absents de la sauvegarde"; exit 1; }
+          # mariadb-dump écrit « /*!50003 CREATE*/ … TRIGGER nom » : on cherche les noms
+          zcat "$copie" | grep -q "trg_after_achat_insert" || { echo "Triggers absents de la sauvegarde"; exit 1; }
+          zcat "$copie" | grep -q "sp_ajuster_stock_achat" || { echo "Procédures absentes de la sauvegarde"; exit 1; }
           zcat "$copie" | grep -q "gerant@test.local" || { echo "Compte admin absent de la sauvegarde"; exit 1; }
           sudo cp "$copie" import/lafermiere.sql.gz
 
