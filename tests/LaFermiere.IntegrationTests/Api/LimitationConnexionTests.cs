@@ -28,13 +28,57 @@ namespace LaFermiere.IntegrationTests.Api
             _api = api;
         }
 
-        private static WebApplicationFactory<Program> ApiLimitee() =>
+        private static WebApplicationFactory<Program> ApiLimitee(bool derriereCaddy = false) =>
             new WebApplicationFactory<Program>().WithWebHostBuilder(hote =>
                 hote.ConfigureAppConfiguration(config => config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["LimitationConnexion:TentativesMax"] = Limite.ToString(),
-                    ["LimitationConnexion:FenetreSecondes"] = "60"
+                    ["LimitationConnexion:FenetreSecondes"] = "60",
+                    ["Proxy:EnTetesTransmis"] = derriereCaddy.ToString()
                 })));
+
+        /// <summary>Requête de connexion comme la transmet Caddy : vraie adresse du téléphone dans X-Forwarded-For.</summary>
+        private static Task<HttpResponseMessage> ConnexionDepuisAsync(HttpClient client, string adresseIp)
+        {
+            var requete = new HttpRequestMessage(HttpMethod.Post, RouteConnexion)
+            {
+                Content = JsonContent.Create(new { email = ComptesDeTest.Admin.Email, password = "MauvaisMotDePasse1" })
+            };
+            requete.Headers.Add("X-Forwarded-For", adresseIp);
+            return client.SendAsync(requete);
+        }
+
+        [Fact]
+        public async Task DerriereCaddy_ChaqueTelephoneASaPropreLimite()
+        {
+            // Sur le serveur, toutes les requêtes arrivent de Caddy : sans la vraie adresse,
+            // les essais de tous les téléphones s'additionneraient dans un seul compteur.
+            await using var api = ApiLimitee(derriereCaddy: true);
+            var client = api.CreateClient();
+
+            for (var i = 0; i < Limite; i++)
+            {
+                await ConnexionDepuisAsync(client, "41.202.1.10");
+            }
+
+            Assert.Equal(HttpStatusCode.TooManyRequests, (await ConnexionDepuisAsync(client, "41.202.1.10")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await ConnexionDepuisAsync(client, "41.202.1.11")).StatusCode);
+        }
+
+        [Fact]
+        public async Task SansCaddy_LEnTeteXForwardedForEstIgnore()
+        {
+            // Sinon n'importe qui contournerait la limite en inventant une adresse à chaque essai
+            await using var api = ApiLimitee(derriereCaddy: false);
+            var client = api.CreateClient();
+
+            for (var i = 0; i < Limite; i++)
+            {
+                await ConnexionDepuisAsync(client, $"41.202.1.{i}");
+            }
+
+            Assert.Equal(HttpStatusCode.TooManyRequests, (await ConnexionDepuisAsync(client, "41.202.1.99")).StatusCode);
+        }
 
         private static Task<HttpResponseMessage> ConnexionAsync(HttpClient client, string motDePasse) =>
             client.PostAsJsonAsync(RouteConnexion, new { email = ComptesDeTest.Admin.Email, password = motDePasse });

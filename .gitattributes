@@ -1,0 +1,7 @@
+# Fichiers exécutés sous Linux (serveur, conteneurs) : fins de ligne Unix obligatoires,
+# même si le dépôt est extrait sous Windows.
+*.sh text eol=lf
+Caddyfile text eol=lf
+*.Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+deploiement/.env.exemple text eol=lf

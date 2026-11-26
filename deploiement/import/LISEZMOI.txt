@@ -1,0 +1,2 @@
+# Posez ici lafermiere.sql (export phpMyAdmin) AVANT le premier démarrage pour importer vos données.
+# Voir deploiement/README.md, « Reprendre vos données de XAMPP ».

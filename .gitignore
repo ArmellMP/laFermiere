@@ -18,3 +18,9 @@ obj/
 ## OS files
 .DS_Store
 Thumbs.db
+
+## Mise en ligne (deploiement/) : mots de passe et données, jamais dans git
+deploiement/.env
+deploiement/sauvegardes/
+deploiement/import/*.sql
+deploiement/import/*.sql.gz

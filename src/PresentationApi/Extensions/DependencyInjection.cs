@@ -25,7 +25,10 @@ namespace PresentationApi.Extensions
             services.AddMemoryCache();
             services.AddHealthChecks();
 
-            // ✅ 4. Tâche de fond : génération périodique des alertes métier
+            // ✅ 4. Au démarrage : remplacer le compte admin par défaut (CompteInitial:*, serveur en ligne)
+            services.AddHostedService<PresentationApi.Services.CompteInitialService>();
+
+            // ✅ 5. Tâche de fond : génération périodique des alertes métier
             services.AddHostedService<PresentationApi.Services.GenerationAlertesBackgroundService>();
 
             return services;

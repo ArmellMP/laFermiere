@@ -1,0 +1,12 @@
+# Fichiers inutiles à la construction des images Docker (voir deploiement/)
+.git
+**/bin
+**/obj
+**/node_modules
+frontend/dist
+TestResults
+TestDbConnection
+tests
+deploiement/.env
+deploiement/sauvegardes
+deploiement/import
