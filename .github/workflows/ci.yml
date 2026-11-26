@@ -97,3 +97,49 @@ jobs:
 
       - name: Vérification des types et build de production
         run: npm run build
+
+  kit-mise-en-ligne:
+    name: Kit de mise en ligne (Docker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: deploiement
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Préparer un .env de test (domaine localhost, certificat interne de Caddy)
+        run: |
+          bash preparer.sh
+          sed -i \
+            -e 's/^DOMAINE=.*/DOMAINE=localhost/' \
+            -e 's/^ADMIN_EMAIL=.*/ADMIN_EMAIL=gerant@test.local/' \
+            -e 's/^ADMIN_NOM=.*/ADMIN_NOM=Gerant CI/' \
+            -e 's/^ADMIN_MOT_DE_PASSE=.*/ADMIN_MOT_DE_PASSE=Serveur2026x/' \
+            .env
+
+      - name: Construire les images et démarrer (base neuve depuis schema.sql)
+        run: docker compose up -d --build
+
+      - name: Vérifier (https, application, base, compte admin remplacé, limite de connexion)
+        run: bash verifier.sh --complet
+
+      - name: Sauvegarder la base
+        run: |
+          docker compose exec -T sauvegarde bash /scripts/sauvegarder.sh --une-fois
+          copie=$(ls -t sauvegardes/lafermiere-*.sql.gz | head -1)
+          zcat "$copie" | grep -q "CREATE TRIGGER" || { echo "Triggers absents de la sauvegarde"; exit 1; }
+          zcat "$copie" | grep -q "gerant@test.local" || { echo "Compte admin absent de la sauvegarde"; exit 1; }
+          sudo cp "$copie" import/lafermiere.sql.gz
+
+      - name: Restaurer la sauvegarde sur un serveur neuf, puis revérifier
+        run: |
+          docker compose down --volumes
+          docker compose up -d
+          bash verifier.sh
+
+      - name: Journaux des conteneurs (en cas d'échec)
+        if: failure()
+        run: docker compose logs --no-color --tail=200

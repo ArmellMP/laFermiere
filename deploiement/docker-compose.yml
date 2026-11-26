@@ -1,0 +1,96 @@
+# La Fermière en ligne : un serveur Linux avec Docker suffit.
+#
+#   web         Caddy : https automatique (Let's Encrypt), sert l'application, transmet /api à l'API
+#   api         API .NET (non exposée sur Internet : seul Caddy la joint)
+#   base        MariaDB 10.11 (données dans le volume « donnees-base »)
+#   sauvegarde  copie de la base chaque nuit dans ./sauvegardes (14 jours gardés)
+#
+# Mode d'emploi : voir README.md de ce dossier.
+name: lafermiere
+
+services:
+  base:
+    image: mariadb:10.11
+    restart: unless-stopped
+    command:
+      # Comme XAMPP sous Windows : « bandes » et « Bandes » sont la même table.
+      # Indispensable pour importer une sauvegarde faite depuis phpMyAdmin (noms en minuscules).
+      - --lower-case-table-names=1
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MOT_DE_PASSE_ROOT_BASE:?Renseignez MOT_DE_PASSE_ROOT_BASE dans .env}
+      # Compte utilisé par l'API (droits limités, donnés par initialisation/01-creer-la-base.sh)
+      MARIADB_USER: lafermiere
+      MARIADB_PASSWORD: ${MOT_DE_PASSE_BASE:?Renseignez MOT_DE_PASSE_BASE dans .env}
+      TZ: Africa/Douala
+    volumes:
+      - donnees-base:/var/lib/mysql
+      - ./initialisation:/docker-entrypoint-initdb.d:ro
+      - ../database/schema.sql:/schema/schema.sql:ro
+      - ./import:/import:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploiement/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__DefaultConnection: "Server=base;Port=3306;Database=lafermiere;User=lafermiere;Password=${MOT_DE_PASSE_BASE};CharSet=utf8mb4;AllowUserVariables=true"
+      JwtSettings__SecretKey: ${CLE_JWT:?Renseignez CLE_JWT dans .env}
+      # Caddy transmet la vraie adresse IP des téléphones (limite de connexion par appareil)
+      Proxy__EnTetesTransmis: "true"
+      # Remplace le compte admin@ferme.local / Admin123 (public) au premier démarrage
+      CompteInitial__Email: ${ADMIN_EMAIL:-}
+      CompteInitial__MotDePasse: ${ADMIN_MOT_DE_PASSE:-}
+      CompteInitial__Nom: ${ADMIN_NOM:-}
+      TZ: Africa/Douala
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploiement/web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAINE: ${DOMAINE:?Renseignez DOMAINE dans .env}
+    volumes:
+      # Certificats https : gardés entre deux redémarrages
+      - caddy-donnees:/data
+      - caddy-config:/config
+
+  sauvegarde:
+    image: mariadb:10.11
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/scripts/sauvegarder.sh"]
+    environment:
+      MOT_DE_PASSE_ROOT_BASE: ${MOT_DE_PASSE_ROOT_BASE}
+      CONSERVER_JOURS: ${CONSERVER_JOURS:-14}
+      TZ: Africa/Douala
+    volumes:
+      - ./sauvegarde:/scripts:ro
+      - ./sauvegardes:/sauvegardes
+
+volumes:
+  donnees-base:
+  caddy-donnees:
+  caddy-config:

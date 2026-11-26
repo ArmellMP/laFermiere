@@ -1,0 +1,38 @@
+# Caddy obtient et renouvelle tout seul le certificat https (Let's Encrypt) pour {$DOMAINE}.
+# DOMAINE vient du fichier .env (ex. : lafermiere.example.com, ou 203-0-113-7.sslip.io).
+{$DOMAINE} {
+	encode zstd gzip
+
+	# Données : vers l'API (Caddy ajoute X-Forwarded-For avec la vraie adresse du téléphone
+	# et ignore celui envoyé par le client : personne ne peut inventer son adresse)
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+	handle /health* {
+		reverse_proxy api:8080
+	}
+
+	# Application : fichiers compilés ; toute autre adresse (/bandes/12…) renvoie index.html
+	handle {
+		root * /srv
+
+		# Fichiers dont le nom contient une empreinte : ne changent jamais, gardés 1 an
+		@empreinte path /assets/*
+		header @empreinte Cache-Control "public, max-age=31536000, immutable"
+
+		# Toujours revérifiés : une nouvelle version est prise tout de suite
+		@frais path / /index.html /sw.js /manifest.webmanifest
+		header @frais Cache-Control "no-cache"
+
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

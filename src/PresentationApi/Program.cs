@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Application.Common.Security;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -149,6 +150,25 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Derrière le serveur https (Caddy, voir deploiement/), toutes les requêtes arrivent de Caddy :
+// sans ce réglage, l'API verrait la même adresse IP pour tous les téléphones (et la limite de
+// connexion par IP s'appliquerait à tout le monde à la fois). Caddy transmet la vraie adresse
+// (X-Forwarded-For) et le protocole https (X-Forwarded-Proto).
+// Activé seulement par configuration (Proxy:EnTetesTransmis=true) : sur le serveur, l'API
+// n'est joignable que par Caddy (réseau Docker interne), seul à pouvoir écrire ces en-têtes.
+// (Réglage lu quand le pipeline est construit, une fois toute la configuration chargée.)
+builder.Services.AddOptions<ForwardedHeadersOptions>().Configure<IConfiguration>((options, configuration) =>
+{
+    if (!configuration.GetValue<bool>("Proxy:EnTetesTransmis"))
+    {
+        options.ForwardedHeaders = ForwardedHeaders.None;   // en-têtes ignorés : personne ne peut inventer son IP
+        return;
+    }
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // Limitation des tentatives de connexion (10 par minute et par IP par défaut) : voir LimitationConnexionExtensions
 builder.Services.AddLimitationConnexion(builder.Configuration);
 
@@ -163,6 +183,8 @@ var app = builder.Build();
 // ============================================
 // 2. PIPELINE HTTP
 // ============================================
+
+app.UseForwardedHeaders();   // en premier : tout le reste voit la vraie IP et https (sans effet si Proxy:EnTetesTransmis est faux)
 
 app.UseMiddleware<ExceptionMiddleware>();
 
